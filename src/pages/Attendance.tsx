@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,9 +13,21 @@ import {
   User,
   Plus
 } from 'lucide-react';
+import AttendanceDialog from '@/components/AttendanceDialog';
 
 const Attendance = () => {
   const { user, attendance, subjects, users } = useAuth();
+  const [attendanceDialog, setAttendanceDialog] = useState<{
+    open: boolean;
+    studentId: string;
+    studentName: string;
+    subject: string;
+  }>({
+    open: false,
+    studentId: '',
+    studentName: '',
+    subject: ''
+  });
 
   const isStudent = user?.role === 'student';
   const students = users.filter(u => u.role === 'student');
@@ -257,17 +270,18 @@ const Attendance = () => {
                             <User className="w-4 h-4 text-muted-foreground" />
                             <span className="text-sm font-medium text-foreground">{student.name}</span>
                           </div>
-                          <div className="flex gap-1">
-                            <Button variant="outline" size="sm" className="text-success hover:text-success">
-                              <CheckCircle className="w-3 h-3" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-warning hover:text-warning">
-                              <Clock className="w-3 h-3" />
-                            </Button>
-                            <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                              <XCircle className="w-3 h-3" />
-                            </Button>
-                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => setAttendanceDialog({
+                              open: true,
+                              studentId: student.id,
+                              studentName: student.name,
+                              subject: subject.name
+                            })}
+                          >
+                            Mark
+                          </Button>
                         </div>
                       ))}
                     </div>
@@ -278,6 +292,14 @@ const Attendance = () => {
           </Card>
         </div>
       )}
+
+      <AttendanceDialog
+        open={attendanceDialog.open}
+        onOpenChange={(open) => setAttendanceDialog({ ...attendanceDialog, open })}
+        studentId={attendanceDialog.studentId}
+        studentName={attendanceDialog.studentName}
+        subject={attendanceDialog.subject}
+      />
     </div>
   );
 };

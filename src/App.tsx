@@ -59,6 +59,20 @@ const AppRoutes = () => (
         </DashboardLayout>
       </ProtectedRoute>
     } />
+    <Route path="/attendance-management" element={
+      <ProtectedRoute>
+        <DashboardLayout>
+          <Attendance />
+        </DashboardLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/grade-management" element={
+      <ProtectedRoute>
+        <DashboardLayout>
+          <Grades />
+        </DashboardLayout>
+      </ProtectedRoute>
+    } />
     <Route path="/" element={<Navigate to="/dashboard" replace />} />
     <Route path="*" element={<NotFound />} />
   </Routes>

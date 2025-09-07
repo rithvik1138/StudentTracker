@@ -1,11 +1,25 @@
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { BookOpen, User, Plus, Trash2 } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { BookOpen, User, Plus, Trash2, UserPlus, UserMinus } from 'lucide-react';
+import SubjectDialog from '@/components/SubjectDialog';
+import StudentDialog from '@/components/StudentDialog';
 
 const Subjects = () => {
-  const { user, subjects } = useAuth();
+  const { user, subjects, removeSubject, users, removeStudent } = useAuth();
+  const [subjectDialog, setSubjectDialog] = useState<{ open: boolean; subject?: any; mode: 'add' | 'edit' }>({
+    open: false,
+    mode: 'add'
+  });
+  const [studentDialog, setStudentDialog] = useState<{ open: boolean; student?: any; mode: 'add' | 'edit' }>({
+    open: false,
+    mode: 'add'
+  });
+
+  const students = users.filter(u => u.role === 'student');
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
@@ -32,10 +46,16 @@ const Subjects = () => {
           </p>
         </div>
         {user?.role !== 'student' && (
-          <Button>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Subject
-          </Button>
+          <div className="flex gap-2">
+            <Button onClick={() => setSubjectDialog({ open: true, mode: 'add' })}>
+              <Plus className="w-4 h-4 mr-2" />
+              Add Subject
+            </Button>
+            <Button variant="outline" onClick={() => setStudentDialog({ open: true, mode: 'add' })}>
+              <UserPlus className="w-4 h-4 mr-2" />
+              Add Student
+            </Button>
+          </div>
         )}
       </div>
 
@@ -78,12 +98,35 @@ const Subjects = () => {
                 </div>
               ) : (
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="flex-1"
+                    onClick={() => setSubjectDialog({ open: true, subject, mode: 'edit' })}
+                  >
                     Edit
                   </Button>
-                  <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Subject</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          Are you sure you want to delete "{subject.name}"? This action cannot be undone.
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => removeSubject(subject.id)}>
+                          Delete
+                        </AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </div>
               )}
             </CardContent>
@@ -94,26 +137,51 @@ const Subjects = () => {
       {user?.role !== 'student' && (
         <Card>
           <CardHeader>
-            <CardTitle>Student Enrollments</CardTitle>
+            <CardTitle>Student Management</CardTitle>
             <CardDescription>
-              Manage which students are enrolled in each subject
+              Manage students in the system
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {subjects.map((subject) => (
-                <div key={subject.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
+              {students.map((student) => (
+                <div key={student.id} className="flex items-center justify-between p-4 border border-border rounded-lg">
                   <div>
-                    <h4 className="font-medium text-foreground">{subject.name}</h4>
-                    <p className="text-sm text-muted-foreground">Teacher: {subject.teacher}</p>
+                    <h4 className="font-medium text-foreground">{student.name}</h4>
+                    <p className="text-sm text-muted-foreground">{student.email}</p>
+                    {student.cgpa && (
+                      <p className="text-sm text-muted-foreground">CGPA: {student.cgpa}/10</p>
+                    )}
                   </div>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      Manage Students
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setStudentDialog({ open: true, student, mode: 'edit' })}
+                    >
+                      Edit
                     </Button>
-                    <Button variant="outline" size="sm">
-                      View Details
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                          <UserMinus className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove Student</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to remove "{student.name}" from the system? This will also remove all their attendance records.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => removeStudent(student.id)}>
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}
@@ -121,6 +189,20 @@ const Subjects = () => {
           </CardContent>
         </Card>
       )}
+
+      <SubjectDialog
+        open={subjectDialog.open}
+        onOpenChange={(open) => setSubjectDialog({ ...subjectDialog, open })}
+        subject={subjectDialog.subject}
+        mode={subjectDialog.mode}
+      />
+
+      <StudentDialog
+        open={studentDialog.open}
+        onOpenChange={(open) => setStudentDialog({ ...studentDialog, open })}
+        student={studentDialog.student}
+        mode={studentDialog.mode}
+      />
     </div>
   );
 };
