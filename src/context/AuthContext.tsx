@@ -1,4 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
 export interface User {
   id: string;
@@ -33,8 +35,11 @@ export interface Assignment {
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
+  session: Session | null;
+  loading: boolean;
+  login: (email: string, password: string) => Promise<{ error: string | null }>;
+  signUp: (email: string, password: string, name: string, role: 'student' | 'teacher' | 'admin') => Promise<{ error: string | null }>;
+  logout: () => Promise<void>;
   users: User[];
   subjects: Subject[];
   attendance: AttendanceRecord[];
@@ -51,23 +56,7 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock data
-const mockUsers: User[] = [
-  { id: '1', name: 'Rithvik', email: 'rithvik@student.com', role: 'student', cgpa: 9.0 },
-  { id: '2', name: 'Jeethu', email: 'jeethu@student.com', role: 'student', cgpa: 8.5 },
-  { id: '3', name: 'Pardhav', email: 'pardhav@student.com', role: 'student', cgpa: 8.3 },
-  { id: '4', name: 'D.Rithvik', email: 'admin@studenttracker.com', role: 'admin' },
-  { id: '5', name: 'Narayana', email: 'narayana@teacher.com', role: 'teacher' },
-];
-
-const mockCredentials = {
-  'rithvik@student.com': 'password123',
-  'jeethu@student.com': 'password123',
-  'pardhav@student.com': 'password123',
-  'admin@studenttracker.com': 'admin123',
-  'narayana@teacher.com': 'teacher123',
-};
-
+// Mock data for subjects, attendance, assignments (will be replaced with Supabase later)
 const mockSubjects: Subject[] = [
   { id: '1', name: 'CIE', teacher: 'Narayana', grade: 'A' },
   { id: '2', name: 'CICD', teacher: 'Narayana', grade: 'A+' },
@@ -76,71 +65,9 @@ const mockSubjects: Subject[] = [
 ];
 
 const mockAttendance: AttendanceRecord[] = [
-  // Rithvik - 85% attendance (17/20 classes present)
   { id: '1', studentId: '1', subject: 'CIE', date: '2024-01-15', status: 'present' },
   { id: '2', studentId: '1', subject: 'CICD', date: '2024-01-15', status: 'present' },
   { id: '3', studentId: '1', subject: 'TOC', date: '2024-01-15', status: 'present' },
-  { id: '4', studentId: '1', subject: 'Certificate Course', date: '2024-01-15', status: 'present' },
-  { id: '5', studentId: '1', subject: 'CIE', date: '2024-01-16', status: 'present' },
-  { id: '6', studentId: '1', subject: 'CICD', date: '2024-01-16', status: 'absent' },
-  { id: '7', studentId: '1', subject: 'TOC', date: '2024-01-16', status: 'present' },
-  { id: '8', studentId: '1', subject: 'Certificate Course', date: '2024-01-16', status: 'present' },
-  { id: '9', studentId: '1', subject: 'CIE', date: '2024-01-17', status: 'present' },
-  { id: '10', studentId: '1', subject: 'CICD', date: '2024-01-17', status: 'present' },
-  { id: '11', studentId: '1', subject: 'TOC', date: '2024-01-17', status: 'present' },
-  { id: '12', studentId: '1', subject: 'Certificate Course', date: '2024-01-17', status: 'present' },
-  { id: '13', studentId: '1', subject: 'CIE', date: '2024-01-18', status: 'present' },
-  { id: '14', studentId: '1', subject: 'CICD', date: '2024-01-18', status: 'present' },
-  { id: '15', studentId: '1', subject: 'TOC', date: '2024-01-18', status: 'absent' },
-  { id: '16', studentId: '1', subject: 'Certificate Course', date: '2024-01-18', status: 'present' },
-  { id: '17', studentId: '1', subject: 'CIE', date: '2024-01-19', status: 'present' },
-  { id: '18', studentId: '1', subject: 'CICD', date: '2024-01-19', status: 'present' },
-  { id: '19', studentId: '1', subject: 'TOC', date: '2024-01-19', status: 'present' },
-  { id: '20', studentId: '1', subject: 'Certificate Course', date: '2024-01-19', status: 'absent' },
-
-  // Jeethu - 100% attendance (20/20 classes present)
-  { id: '21', studentId: '2', subject: 'CIE', date: '2024-01-15', status: 'present' },
-  { id: '22', studentId: '2', subject: 'CICD', date: '2024-01-15', status: 'present' },
-  { id: '23', studentId: '2', subject: 'TOC', date: '2024-01-15', status: 'present' },
-  { id: '24', studentId: '2', subject: 'Certificate Course', date: '2024-01-15', status: 'present' },
-  { id: '25', studentId: '2', subject: 'CIE', date: '2024-01-16', status: 'present' },
-  { id: '26', studentId: '2', subject: 'CICD', date: '2024-01-16', status: 'present' },
-  { id: '27', studentId: '2', subject: 'TOC', date: '2024-01-16', status: 'present' },
-  { id: '28', studentId: '2', subject: 'Certificate Course', date: '2024-01-16', status: 'present' },
-  { id: '29', studentId: '2', subject: 'CIE', date: '2024-01-17', status: 'present' },
-  { id: '30', studentId: '2', subject: 'CICD', date: '2024-01-17', status: 'present' },
-  { id: '31', studentId: '2', subject: 'TOC', date: '2024-01-17', status: 'present' },
-  { id: '32', studentId: '2', subject: 'Certificate Course', date: '2024-01-17', status: 'present' },
-  { id: '33', studentId: '2', subject: 'CIE', date: '2024-01-18', status: 'present' },
-  { id: '34', studentId: '2', subject: 'CICD', date: '2024-01-18', status: 'present' },
-  { id: '35', studentId: '2', subject: 'TOC', date: '2024-01-18', status: 'present' },
-  { id: '36', studentId: '2', subject: 'Certificate Course', date: '2024-01-18', status: 'present' },
-  { id: '37', studentId: '2', subject: 'CIE', date: '2024-01-19', status: 'present' },
-  { id: '38', studentId: '2', subject: 'CICD', date: '2024-01-19', status: 'present' },
-  { id: '39', studentId: '2', subject: 'TOC', date: '2024-01-19', status: 'present' },
-  { id: '40', studentId: '2', subject: 'Certificate Course', date: '2024-01-19', status: 'present' },
-
-  // Pardhav - 60% attendance (12/20 classes present)
-  { id: '41', studentId: '3', subject: 'CIE', date: '2024-01-15', status: 'present' },
-  { id: '42', studentId: '3', subject: 'CICD', date: '2024-01-15', status: 'absent' },
-  { id: '43', studentId: '3', subject: 'TOC', date: '2024-01-15', status: 'present' },
-  { id: '44', studentId: '3', subject: 'Certificate Course', date: '2024-01-15', status: 'absent' },
-  { id: '45', studentId: '3', subject: 'CIE', date: '2024-01-16', status: 'present' },
-  { id: '46', studentId: '3', subject: 'CICD', date: '2024-01-16', status: 'present' },
-  { id: '47', studentId: '3', subject: 'TOC', date: '2024-01-16', status: 'absent' },
-  { id: '48', studentId: '3', subject: 'Certificate Course', date: '2024-01-16', status: 'absent' },
-  { id: '49', studentId: '3', subject: 'CIE', date: '2024-01-17', status: 'present' },
-  { id: '50', studentId: '3', subject: 'CICD', date: '2024-01-17', status: 'present' },
-  { id: '51', studentId: '3', subject: 'TOC', date: '2024-01-17', status: 'absent' },
-  { id: '52', studentId: '3', subject: 'Certificate Course', date: '2024-01-17', status: 'present' },
-  { id: '53', studentId: '3', subject: 'CIE', date: '2024-01-18', status: 'absent' },
-  { id: '54', studentId: '3', subject: 'CICD', date: '2024-01-18', status: 'present' },
-  { id: '55', studentId: '3', subject: 'TOC', date: '2024-01-18', status: 'present' },
-  { id: '56', studentId: '3', subject: 'Certificate Course', date: '2024-01-18', status: 'absent' },
-  { id: '57', studentId: '3', subject: 'CIE', date: '2024-01-19', status: 'present' },
-  { id: '58', studentId: '3', subject: 'CICD', date: '2024-01-19', status: 'absent' },
-  { id: '59', studentId: '3', subject: 'TOC', date: '2024-01-19', status: 'present' },
-  { id: '60', studentId: '3', subject: 'Certificate Course', date: '2024-01-19', status: 'present' },
 ];
 
 const mockAssignments: Assignment[] = [
@@ -150,33 +77,149 @@ const mockAssignments: Assignment[] = [
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(mockUsers);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [users, setUsers] = useState<User[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>(mockAttendance);
   const [assignments] = useState<Assignment[]>(mockAssignments);
 
   useEffect(() => {
-    const savedUser = localStorage.getItem('studentTracker_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        
+        if (session?.user) {
+          // Defer profile fetch with setTimeout
+          setTimeout(() => {
+            fetchUserProfile(session.user);
+          }, 0);
+        } else {
+          setUser(null);
+        }
+        
+        setLoading(false);
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      if (session?.user) {
+        setTimeout(() => {
+          fetchUserProfile(session.user);
+        }, 0);
+      }
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = (email: string, password: string): boolean => {
-    if (mockCredentials[email as keyof typeof mockCredentials] === password) {
-      const foundUser = users.find(u => u.email === email);
-      if (foundUser) {
-        setUser(foundUser);
-        localStorage.setItem('studentTracker_user', JSON.stringify(foundUser));
-        return true;
+  const fetchUserProfile = async (supabaseUser: SupabaseUser) => {
+    try {
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', supabaseUser.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching profile:', error);
+        return;
       }
+
+      if (profile) {
+        setUser({
+          id: profile.user_id,
+          email: supabaseUser.email || '',
+          name: profile.name,
+          role: profile.role,
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching user profile:', error);
     }
-    return false;
   };
 
-  const logout = () => {
+  const fetchAllUsers = async () => {
+    try {
+      const { data: profiles, error } = await supabase
+        .from('profiles')
+        .select('*');
+
+      if (error) {
+        console.error('Error fetching users:', error);
+        return;
+      }
+
+      if (profiles) {
+        const usersList = profiles.map(profile => ({
+          id: profile.user_id,
+          email: '', // Email is not stored in profiles for security
+          name: profile.name,
+          role: profile.role,
+        }));
+        setUsers(usersList);
+      }
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    }
+  };
+
+  const login = async (email: string, password: string): Promise<{ error: string | null }> => {
+    try {
+      const { error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: 'Login failed. Please try again.' };
+    }
+  };
+
+  const signUp = async (
+    email: string, 
+    password: string, 
+    name: string, 
+    role: 'student' | 'teacher' | 'admin'
+  ): Promise<{ error: string | null }> => {
+    try {
+      const redirectUrl = `${window.location.origin}/`;
+      
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: redirectUrl,
+          data: {
+            name,
+            role,
+          },
+        },
+      });
+
+      if (error) {
+        return { error: error.message };
+      }
+
+      return { error: null };
+    } catch (error) {
+      return { error: 'Sign up failed. Please try again.' };
+    }
+  };
+
+  const logout = async () => {
+    await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('studentTracker_user');
+    setSession(null);
   };
 
   const addAttendance = (record: AttendanceRecord) => {
@@ -214,10 +257,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setAttendance(prev => prev.filter(a => a.studentId !== studentId));
   };
 
+  // Fetch all users when user logs in (for admin/teacher views)
+  useEffect(() => {
+    if (user && (user.role === 'admin' || user.role === 'teacher')) {
+      fetchAllUsers();
+    }
+  }, [user]);
+
   return (
     <AuthContext.Provider value={{
       user,
+      session,
+      loading,
       login,
+      signUp,
       logout,
       users,
       subjects,
