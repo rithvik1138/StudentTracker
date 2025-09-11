@@ -4,56 +4,33 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
-import Auth from '@/pages/Auth';
+import LoginPage from "@/components/LoginPage";
 import DashboardLayout from "@/components/DashboardLayout";
 import Dashboard from "@/pages/Dashboard";
 import Subjects from "@/pages/Subjects";
 import Grades from "@/pages/Grades";
 import Attendance from "@/pages/Attendance";
 import NotFound from "./pages/NotFound";
-import Index from "./pages/Index";
 
 const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  return user ? <>{children}</> : <Navigate to="/auth" replace />;
+  const { user } = useAuth();
+  return user ? <>{children}</> : <Navigate to="/login" replace />;
 };
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
-  const { user, loading } = useAuth();
-  
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
-  
-  return !user ? <>{children}</> : <Navigate to="/dashboard" replace />;
+  const { user } = useAuth();
+  return user ? <Navigate to="/dashboard" replace /> : <>{children}</>;
 };
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/" element={<Index />} />
-    <Route 
-      path="/auth" 
-      element={
-        <PublicRoute>
-          <Auth />
-        </PublicRoute>
-      } 
-    />
+    <Route path="/login" element={
+      <PublicRoute>
+        <LoginPage />
+      </PublicRoute>
+    } />
     <Route path="/dashboard" element={
       <ProtectedRoute>
         <DashboardLayout>
@@ -96,6 +73,7 @@ const AppRoutes = () => (
         </DashboardLayout>
       </ProtectedRoute>
     } />
+    <Route path="/" element={<Navigate to="/dashboard" replace />} />
     <Route path="*" element={<NotFound />} />
   </Routes>
 );
