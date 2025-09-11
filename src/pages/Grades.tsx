@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import GradeDialog from '@/components/GradeDialog';
 import { 
   GraduationCap, 
   TrendingUp, 
@@ -13,10 +15,38 @@ import {
 } from 'lucide-react';
 
 const Grades = () => {
-  const { user, subjects, users } = useAuth();
+  const { user, subjects, users, getStudentGrade } = useAuth();
+  const [gradeDialog, setGradeDialog] = useState<{
+    open: boolean;
+    studentId: string;
+    subjectId: string;
+    studentName: string;
+    subjectName: string;
+  }>({
+    open: false,
+    studentId: '',
+    subjectId: '',
+    studentName: '',
+    subjectName: '',
+  });
 
   const isStudent = user?.role === 'student';
+  const canManageGrades = user?.role === 'admin' || user?.role === 'teacher';
   const students = users.filter(u => u.role === 'student');
+
+  const openGradeDialog = (studentId: string, subjectId: string, studentName: string, subjectName: string) => {
+    setGradeDialog({
+      open: true,
+      studentId,
+      subjectId,
+      studentName,
+      subjectName,
+    });
+  };
+
+  const closeGradeDialog = () => {
+    setGradeDialog(prev => ({ ...prev, open: false }));
+  };
 
   const getGradeColor = (grade: string) => {
     switch (grade) {
@@ -55,7 +85,7 @@ const Grades = () => {
             }
           </p>
         </div>
-        {!isStudent && (
+        {canManageGrades && (
           <Button>
             <Plus className="w-4 h-4 mr-2" />
             Add Grade
@@ -97,12 +127,17 @@ const Grades = () => {
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Graded Subjects:</span>
                     <span className="font-medium text-foreground">
-                      {subjects.filter(s => s.grade).length}
+                      {subjects.filter(s => getStudentGrade(user?.id || '', s.id)).length}
                     </span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Average Grade:</span>
-                    <span className="font-medium text-foreground">A</span>
+                    <span className="font-medium text-foreground">{(() => {
+                      const gradesWithPoints = subjects.map(s => getStudentGrade(user?.id || '', s.id)).filter(Boolean).map(getGradePoints);
+                      if (gradesWithPoints.length === 0) return 'N/A';
+                      const avgPoints = gradesWithPoints.reduce((a, b) => a + b, 0) / gradesWithPoints.length;
+                      return avgPoints >= 9.5 ? 'A+' : avgPoints >= 8.5 ? 'A' : avgPoints >= 7.5 ? 'B+' : 'B';
+                    })()}</span>
                   </div>
                 </div>
               </div>
@@ -111,48 +146,51 @@ const Grades = () => {
 
           {/* Subject Grades */}
           <div className="grid gap-4 md:grid-cols-2">
-            {subjects.map((subject) => (
-              <Card key={subject.id}>
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                        <BookOpen className="w-5 h-5 text-primary" />
+            {subjects.map((subject) => {
+              const studentGrade = getStudentGrade(user?.id || '', subject.id);
+              return (
+                <Card key={subject.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-2">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <BookOpen className="w-5 h-5 text-primary" />
+                        </div>
+                        <CardTitle className="text-lg">{subject.name}</CardTitle>
                       </div>
-                      <CardTitle className="text-lg">{subject.name}</CardTitle>
+                      {studentGrade && (
+                        <Badge className={getGradeColor(studentGrade)}>
+                          {studentGrade}
+                        </Badge>
+                      )}
                     </div>
-                    {subject.grade && (
-                      <Badge className={getGradeColor(subject.grade)}>
-                        {subject.grade}
-                      </Badge>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Grade Points:</span>
-                      <span className="font-medium text-foreground">
-                        {subject.grade ? getGradePoints(subject.grade) : 'N/A'}
-                      </span>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Grade Points:</span>
+                        <span className="font-medium text-foreground">
+                          {studentGrade ? getGradePoints(studentGrade) : 'N/A'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Teacher:</span>
+                        <span className="font-medium text-foreground">{subject.teacher}</span>
+                      </div>
+                      {studentGrade && (
+                        <Progress 
+                          value={getGradePoints(studentGrade) * 10} 
+                          className="h-2"
+                        />
+                      )}
                     </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Teacher:</span>
-                      <span className="font-medium text-foreground">{subject.teacher}</span>
-                    </div>
-                    {subject.grade && (
-                      <Progress 
-                        value={getGradePoints(subject.grade) * 10} 
-                        className="h-2"
-                      />
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
-      ) : (
+      ) : canManageGrades ? (
         <div className="space-y-6">
           {/* Student CGPA Overview */}
           <Card>
@@ -206,21 +244,37 @@ const Grades = () => {
                         <h4 className="font-medium text-foreground">{subject.name}</h4>
                         <p className="text-sm text-muted-foreground">Teacher: {subject.teacher}</p>
                       </div>
-                      <Button variant="outline" size="sm">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          // For now, just edit the first student's grade as an example
+                          const firstStudent = students[0];
+                          if (firstStudent) {
+                            openGradeDialog(firstStudent.id, subject.id, firstStudent.name, subject.name);
+                          }
+                        }}
+                      >
                         <Edit className="w-4 h-4 mr-2" />
                         Edit Grades
                       </Button>
                     </div>
                     
                     <div className="grid gap-3 md:grid-cols-3">
-                      {students.map((student) => (
-                        <div key={student.id} className="flex items-center justify-between p-2 bg-muted/50 rounded">
-                          <span className="text-sm font-medium text-foreground">{student.name}</span>
-                          <Badge className={getGradeColor(subject.grade || 'N/A')}>
-                            {subject.grade || 'Not Graded'}
-                          </Badge>
-                        </div>
-                      ))}
+                      {students.map((student) => {
+                        const studentGrade = getStudentGrade(student.id, subject.id);
+                        return (
+                          <div key={student.id} 
+                               className="flex items-center justify-between p-2 bg-muted/50 rounded cursor-pointer hover:bg-muted/70 transition-colors"
+                               onClick={() => openGradeDialog(student.id, subject.id, student.name, subject.name)}
+                          >
+                            <span className="text-sm font-medium text-foreground">{student.name}</span>
+                            <Badge className={getGradeColor(studentGrade || 'N/A')}>
+                              {studentGrade || 'Not Graded'}
+                            </Badge>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
                 ))}
@@ -228,7 +282,20 @@ const Grades = () => {
             </CardContent>
           </Card>
         </div>
+      ) : (
+        <div className="text-center py-8">
+          <p className="text-muted-foreground">You don't have permission to manage grades.</p>
+        </div>
       )}
+
+      <GradeDialog
+        open={gradeDialog.open}
+        onOpenChange={closeGradeDialog}
+        studentId={gradeDialog.studentId}
+        subjectId={gradeDialog.subjectId}
+        studentName={gradeDialog.studentName}
+        subjectName={gradeDialog.subjectName}
+      />
     </div>
   );
 };

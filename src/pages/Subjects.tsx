@@ -9,7 +9,7 @@ import SubjectDialog from '@/components/SubjectDialog';
 import StudentDialog from '@/components/StudentDialog';
 
 const Subjects = () => {
-  const { user, subjects, removeSubject, users, removeStudent } = useAuth();
+  const { user, subjects, removeSubject, users, removeStudent, getStudentGrade } = useAuth();
   const [subjectDialog, setSubjectDialog] = useState<{ open: boolean; subject?: any; mode: 'add' | 'edit' }>({
     open: false,
     mode: 'add'
@@ -60,78 +60,83 @@ const Subjects = () => {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        {subjects.map((subject) => (
-          <Card key={subject.id} className="hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-5 h-5 text-primary" />
+        {subjects.map((subject) => {
+          const studentGrade = user?.role === 'student' ? getStudentGrade(user?.id || '', subject.id) : null;
+          return (
+            <Card key={subject.id} className="hover:shadow-md transition-shadow">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                      <BookOpen className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-lg">{subject.name}</CardTitle>
+                    </div>
                   </div>
-                  <div>
-                    <CardTitle className="text-lg">{subject.name}</CardTitle>
-                  </div>
+                  {user?.role === 'student' && studentGrade && (
+                    <Badge className={getGradeColor(studentGrade)}>
+                      {studentGrade}
+                    </Badge>
+                  )}
                 </div>
-                {user?.role === 'student' && subject.grade && (
-                  <Badge className={getGradeColor(subject.grade)}>
-                    {subject.grade}
-                  </Badge>
-                )}
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center text-sm text-muted-foreground">
-                <User className="w-4 h-4 mr-2" />
-                <span>Teacher: {subject.teacher}</span>
-              </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center text-sm text-muted-foreground">
+                  <User className="w-4 h-4 mr-2" />
+                  <span>Teacher: {subject.teacher}</span>
+                </div>
 
-              {user?.role === 'student' ? (
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Current Grade:</span>
-                    <span className="font-medium text-foreground">{subject.grade || 'Not graded'}</span>
+                {user?.role === 'student' ? (
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Current Grade:</span>
+                      <span className="font-medium text-foreground">
+                        {studentGrade || 'Not graded'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-muted-foreground">Status:</span>
+                      <span className="font-medium text-success">Active</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Status:</span>
-                    <span className="font-medium text-success">Active</span>
+                ) : (
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1"
+                      onClick={() => setSubjectDialog({ open: true, subject, mode: 'edit' })}
+                    >
+                      Edit
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Subject</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Are you sure you want to delete "{subject.name}"? This action cannot be undone.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => removeSubject(subject.id)}>
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
-                </div>
-              ) : (
-                <div className="flex gap-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="flex-1"
-                    onClick={() => setSubjectDialog({ open: true, subject, mode: 'edit' })}
-                  >
-                    Edit
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" size="sm" className="text-destructive hover:text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Subject</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Are you sure you want to delete "{subject.name}"? This action cannot be undone.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => removeSubject(subject.id)}>
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                )}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {user?.role !== 'student' && (

@@ -12,7 +12,13 @@ export interface Subject {
   id: string;
   name: string;
   teacher: string;
-  grade?: string;
+}
+
+export interface StudentGrade {
+  id: string;
+  studentId: string;
+  subjectId: string;
+  grade: string;
 }
 
 export interface AttendanceRecord {
@@ -37,6 +43,7 @@ interface AuthContextType {
   logout: () => void;
   users: User[];
   subjects: Subject[];
+  grades: StudentGrade[];
   attendance: AttendanceRecord[];
   assignments: Assignment[];
   addAttendance: (record: AttendanceRecord) => void;
@@ -47,6 +54,8 @@ interface AuthContextType {
   removeSubject: (subjectId: string) => void;
   addStudent: (student: User) => void;
   removeStudent: (studentId: string) => void;
+  updateStudentGrade: (studentId: string, subjectId: string, grade: string) => void;
+  getStudentGrade: (studentId: string, subjectId: string) => string | undefined;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -69,10 +78,25 @@ const mockCredentials = {
 };
 
 const mockSubjects: Subject[] = [
-  { id: '1', name: 'CIE', teacher: 'Narayana', grade: 'A' },
-  { id: '2', name: 'CICD', teacher: 'Narayana', grade: 'A+' },
-  { id: '3', name: 'TOC', teacher: 'Narayana', grade: 'A' },
-  { id: '4', name: 'Certificate Course', teacher: 'Narayana', grade: 'A+' },
+  { id: '1', name: 'CIE', teacher: 'Narayana' },
+  { id: '2', name: 'CICD', teacher: 'Narayana' },
+  { id: '3', name: 'TOC', teacher: 'Narayana' },
+  { id: '4', name: 'Certificate Course', teacher: 'Narayana' },
+];
+
+const mockGrades: StudentGrade[] = [
+  { id: '1', studentId: '1', subjectId: '1', grade: 'A' },
+  { id: '2', studentId: '1', subjectId: '2', grade: 'A+' },
+  { id: '3', studentId: '1', subjectId: '3', grade: 'A' },
+  { id: '4', studentId: '1', subjectId: '4', grade: 'A+' },
+  { id: '5', studentId: '2', subjectId: '1', grade: 'A+' },
+  { id: '6', studentId: '2', subjectId: '2', grade: 'A' },
+  { id: '7', studentId: '2', subjectId: '3', grade: 'A+' },
+  { id: '8', studentId: '2', subjectId: '4', grade: 'A' },
+  { id: '9', studentId: '3', subjectId: '1', grade: 'B+' },
+  { id: '10', studentId: '3', subjectId: '2', grade: 'B' },
+  { id: '11', studentId: '3', subjectId: '3', grade: 'B+' },
+  { id: '12', studentId: '3', subjectId: '4', grade: 'B' },
 ];
 
 const mockAttendance: AttendanceRecord[] = [
@@ -152,6 +176,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [users, setUsers] = useState<User[]>(mockUsers);
   const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
+  const [grades, setGrades] = useState<StudentGrade[]>(mockGrades);
   const [attendance, setAttendance] = useState<AttendanceRecord[]>(mockAttendance);
   const [assignments] = useState<Assignment[]>(mockAssignments);
 
@@ -212,6 +237,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeStudent = (studentId: string) => {
     setUsers(prev => prev.filter(u => u.id !== studentId));
     setAttendance(prev => prev.filter(a => a.studentId !== studentId));
+    setGrades(prev => prev.filter(g => g.studentId !== studentId));
+  };
+
+  const updateStudentGrade = (studentId: string, subjectId: string, grade: string) => {
+    setGrades(prev => {
+      const existingGrade = prev.find(g => g.studentId === studentId && g.subjectId === subjectId);
+      if (existingGrade) {
+        return prev.map(g => 
+          g.studentId === studentId && g.subjectId === subjectId 
+            ? { ...g, grade } 
+            : g
+        );
+      } else {
+        return [...prev, {
+          id: Date.now().toString(),
+          studentId,
+          subjectId,
+          grade
+        }];
+      }
+    });
+  };
+
+  const getStudentGrade = (studentId: string, subjectId: string) => {
+    const grade = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
+    return grade?.grade;
   };
 
   return (
@@ -221,6 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       logout,
       users,
       subjects,
+      grades,
       attendance,
       assignments,
       addAttendance,
@@ -231,6 +283,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       removeSubject,
       addStudent,
       removeStudent,
+      updateStudentGrade,
+      getStudentGrade,
     }}>
       {children}
     </AuthContext.Provider>
