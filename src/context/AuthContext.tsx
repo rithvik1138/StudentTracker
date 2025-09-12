@@ -12,13 +12,16 @@ export interface Subject {
   id: string;
   name: string;
   teacher: string;
+  credits: number;
 }
 
 export interface StudentGrade {
   id: string;
   studentId: string;
   subjectId: string;
-  grade: string;
+  grade: number;
+  maxMarks: number;
+  obtainedMarks: number;
 }
 
 export interface AttendanceRecord {
@@ -54,17 +57,18 @@ interface AuthContextType {
   removeSubject: (subjectId: string) => void;
   addStudent: (student: User) => void;
   removeStudent: (studentId: string) => void;
-  updateStudentGrade: (studentId: string, subjectId: string, grade: string) => void;
-  getStudentGrade: (studentId: string, subjectId: string) => string | undefined;
+  updateStudentGrade: (studentId: string, subjectId: string, obtainedMarks: number, maxMarks: number) => void;
+  getStudentGrade: (studentId: string, subjectId: string) => number | undefined;
+  calculateCGPA: (studentId: string) => number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// Mock data
+// Mock data - Update CGPA with calculateCGPA function
 const mockUsers: User[] = [
-  { id: '1', name: 'Rithvik', email: 'rithvik@student.com', role: 'student', cgpa: 9.0 },
-  { id: '2', name: 'Jeethu', email: 'jeethu@student.com', role: 'student', cgpa: 8.5 },
-  { id: '3', name: 'Pardhav', email: 'pardhav@student.com', role: 'student', cgpa: 8.3 },
+  { id: '1', name: 'Rithvik', email: 'rithvik@student.com', role: 'student', cgpa: 0 },
+  { id: '2', name: 'Jeethu', email: 'jeethu@student.com', role: 'student', cgpa: 0 },
+  { id: '3', name: 'Pardhav', email: 'pardhav@student.com', role: 'student', cgpa: 0 },
   { id: '4', name: 'D.Rithvik', email: 'admin@studenttracker.com', role: 'admin' },
   { id: '5', name: 'Narayana', email: 'narayana@teacher.com', role: 'teacher' },
 ];
@@ -78,25 +82,25 @@ const mockCredentials = {
 };
 
 const mockSubjects: Subject[] = [
-  { id: '1', name: 'CIE', teacher: 'Narayana' },
-  { id: '2', name: 'CICD', teacher: 'Narayana' },
-  { id: '3', name: 'TOC', teacher: 'Narayana' },
-  { id: '4', name: 'Certificate Course', teacher: 'Narayana' },
+  { id: '1', name: 'CIE', teacher: 'Narayana', credits: 4 },
+  { id: '2', name: 'CICD', teacher: 'Narayana', credits: 5 },
+  { id: '3', name: 'TOC', teacher: 'Narayana', credits: 4 },
+  { id: '4', name: 'Certificate Course', teacher: 'Narayana', credits: 5 },
 ];
 
 const mockGrades: StudentGrade[] = [
-  { id: '1', studentId: '1', subjectId: '1', grade: 'A' },
-  { id: '2', studentId: '1', subjectId: '2', grade: 'A+' },
-  { id: '3', studentId: '1', subjectId: '3', grade: 'A' },
-  { id: '4', studentId: '1', subjectId: '4', grade: 'A+' },
-  { id: '5', studentId: '2', subjectId: '1', grade: 'A+' },
-  { id: '6', studentId: '2', subjectId: '2', grade: 'A' },
-  { id: '7', studentId: '2', subjectId: '3', grade: 'A+' },
-  { id: '8', studentId: '2', subjectId: '4', grade: 'A' },
-  { id: '9', studentId: '3', subjectId: '1', grade: 'B+' },
-  { id: '10', studentId: '3', subjectId: '2', grade: 'B' },
-  { id: '11', studentId: '3', subjectId: '3', grade: 'B+' },
-  { id: '12', studentId: '3', subjectId: '4', grade: 'B' },
+  { id: '1', studentId: '1', subjectId: '1', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
+  { id: '2', studentId: '1', subjectId: '2', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
+  { id: '3', studentId: '1', subjectId: '3', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
+  { id: '4', studentId: '1', subjectId: '4', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
+  { id: '5', studentId: '2', subjectId: '1', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
+  { id: '6', studentId: '2', subjectId: '2', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
+  { id: '7', studentId: '2', subjectId: '3', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
+  { id: '8', studentId: '2', subjectId: '4', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
+  { id: '9', studentId: '3', subjectId: '1', grade: 8.0, maxMarks: 100, obtainedMarks: 80 },
+  { id: '10', studentId: '3', subjectId: '2', grade: 7.0, maxMarks: 100, obtainedMarks: 70 },
+  { id: '11', studentId: '3', subjectId: '3', grade: 8.0, maxMarks: 100, obtainedMarks: 80 },
+  { id: '12', studentId: '3', subjectId: '4', grade: 7.0, maxMarks: 100, obtainedMarks: 70 },
 ];
 
 const mockAttendance: AttendanceRecord[] = [
@@ -240,13 +244,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGrades(prev => prev.filter(g => g.studentId !== studentId));
   };
 
-  const updateStudentGrade = (studentId: string, subjectId: string, grade: string) => {
+  const updateStudentGrade = (studentId: string, subjectId: string, obtainedMarks: number, maxMarks: number) => {
+    const grade = (obtainedMarks / maxMarks) * 10;
     setGrades(prev => {
       const existingGrade = prev.find(g => g.studentId === studentId && g.subjectId === subjectId);
       if (existingGrade) {
         return prev.map(g => 
           g.studentId === studentId && g.subjectId === subjectId 
-            ? { ...g, grade } 
+            ? { ...g, grade, obtainedMarks, maxMarks } 
             : g
         );
       } else {
@@ -254,15 +259,35 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: Date.now().toString(),
           studentId,
           subjectId,
-          grade
+          grade,
+          obtainedMarks,
+          maxMarks
         }];
       }
     });
   };
 
   const getStudentGrade = (studentId: string, subjectId: string) => {
-    const grade = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
-    return grade?.grade;
+    const gradeRecord = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
+    return gradeRecord?.grade;
+  };
+
+  const calculateCGPA = (studentId: string) => {
+    const studentGrades = grades.filter(g => g.studentId === studentId);
+    if (studentGrades.length === 0) return 0;
+
+    let totalWeightedGrades = 0;
+    let totalCredits = 0;
+
+    studentGrades.forEach(gradeRecord => {
+      const subject = subjects.find(s => s.id === gradeRecord.subjectId);
+      if (subject) {
+        totalWeightedGrades += gradeRecord.grade * subject.credits;
+        totalCredits += subject.credits;
+      }
+    });
+
+    return totalCredits > 0 ? totalWeightedGrades / totalCredits : 0;
   };
 
   return (
@@ -285,6 +310,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       removeStudent,
       updateStudentGrade,
       getStudentGrade,
+      calculateCGPA,
     }}>
       {children}
     </AuthContext.Provider>

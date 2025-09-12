@@ -21,14 +21,12 @@ const Subjects = () => {
 
   const students = users.filter(u => u.role === 'student');
 
-  const getGradeColor = (grade: string) => {
-    switch (grade) {
-      case 'A+': return 'bg-success text-success-foreground';
-      case 'A': return 'bg-primary text-primary-foreground';
-      case 'B+': return 'bg-warning text-warning-foreground';
-      case 'B': return 'bg-secondary text-secondary-foreground';
-      default: return 'bg-muted text-muted-foreground';
-    }
+  const getGradeColor = (grade: number) => {
+    if (grade >= 9.5) return 'bg-success text-success-foreground';
+    if (grade >= 8.5) return 'bg-primary text-primary-foreground';
+    if (grade >= 7.5) return 'bg-warning text-warning-foreground';
+    if (grade >= 6.0) return 'bg-secondary text-secondary-foreground';
+    return 'bg-muted text-muted-foreground';
   };
 
   return (
@@ -76,7 +74,7 @@ const Subjects = () => {
                   </div>
                   {user?.role === 'student' && studentGrade && (
                     <Badge className={getGradeColor(studentGrade)}>
-                      {studentGrade}
+                      {studentGrade.toFixed(1)}/10
                     </Badge>
                   )}
                 </div>
@@ -92,7 +90,7 @@ const Subjects = () => {
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Current Grade:</span>
                       <span className="font-medium text-foreground">
-                        {studentGrade || 'Not graded'}
+                        {studentGrade ? studentGrade.toFixed(1) : 'Not graded'}
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">

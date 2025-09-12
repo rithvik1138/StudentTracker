@@ -16,6 +16,7 @@ const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps
   const { addSubject } = useAuth();
   const [name, setName] = useState(subject?.name || '');
   const [teacher, setTeacher] = useState(subject?.teacher || 'Narayana');
+  const [credits, setCredits] = useState(subject?.credits?.toString() || '4');
 
   const handleSubmit = () => {
     if (!name.trim()) return;
@@ -23,7 +24,8 @@ const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps
     const newSubject: Subject = {
       id: mode === 'add' ? Date.now().toString() : subject!.id,
       name: name.trim(),
-      teacher: teacher.trim()
+      teacher: teacher.trim(),
+      credits: parseInt(credits)
     };
 
     if (mode === 'add') {
@@ -34,6 +36,7 @@ const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps
     onOpenChange(false);
     setName('');
     setTeacher('Narayana');
+    setCredits('4');
   };
 
   return (
@@ -66,6 +69,18 @@ const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps
               value={teacher}
               onChange={(e) => setTeacher(e.target.value)}
               placeholder="Enter teacher name"
+            />
+          </div>
+          <div>
+            <Label htmlFor="credits">Credits</Label>
+            <Input
+              id="credits"
+              type="number"
+              value={credits}
+              onChange={(e) => setCredits(e.target.value)}
+              placeholder="4"
+              min="1"
+              max="10"
             />
           </div>
         </div>

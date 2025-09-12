@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 
 const Grades = () => {
-  const { user, subjects, users, getStudentGrade } = useAuth();
+  const { user, subjects, grades, users, getStudentGrade, calculateCGPA } = useAuth();
   const [gradeDialog, setGradeDialog] = useState<{
     open: boolean;
     studentId: string;
@@ -48,25 +48,12 @@ const Grades = () => {
     setGradeDialog(prev => ({ ...prev, open: false }));
   };
 
-  const getGradeColor = (grade: string) => {
-    switch (grade) {
-      case 'A+': return 'bg-success text-success-foreground';
-      case 'A': return 'bg-primary text-primary-foreground';
-      case 'B+': return 'bg-warning text-warning-foreground';
-      case 'B': return 'bg-secondary text-secondary-foreground';
-      default: return 'bg-muted text-muted-foreground';
-    }
-  };
-
-  const getGradePoints = (grade: string) => {
-    switch (grade) {
-      case 'A+': return 10;
-      case 'A': return 9;
-      case 'B+': return 8;
-      case 'B': return 7;
-      case 'C': return 6;
-      default: return 0;
-    }
+  const getGradeColor = (grade: number) => {
+    if (grade >= 9.5) return 'bg-success text-success-foreground';
+    if (grade >= 8.5) return 'bg-primary text-primary-foreground';
+    if (grade >= 7.5) return 'bg-warning text-warning-foreground';
+    if (grade >= 6.0) return 'bg-secondary text-secondary-foreground';
+    return 'bg-muted text-muted-foreground';
   };
 
   const getCGPAProgress = (cgpa: number) => (cgpa / 10) * 100;
@@ -108,15 +95,15 @@ const Grades = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Current CGPA</span>
-                    <span className="text-2xl font-bold text-foreground">{user?.cgpa}/10</span>
+                    <span className="text-2xl font-bold text-foreground">{user?.cgpa ? calculateCGPA(user.id).toFixed(2) : '0.00'}/10</span>
                   </div>
                   <Progress 
-                    value={getCGPAProgress(user?.cgpa || 0)} 
+                    value={getCGPAProgress(user?.cgpa ? calculateCGPA(user.id) : 0)} 
                     className="h-2"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {user?.cgpa && user.cgpa >= 9 ? 'Excellent Performance!' : 
-                     user?.cgpa && user.cgpa >= 8 ? 'Good Performance!' : 'Keep improving!'}
+                    {user?.cgpa && calculateCGPA(user.id) >= 9 ? 'Excellent Performance!' : 
+                     user?.cgpa && calculateCGPA(user.id) >= 8 ? 'Good Performance!' : 'Keep improving!'}
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -133,10 +120,10 @@ const Grades = () => {
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Average Grade:</span>
                     <span className="font-medium text-foreground">{(() => {
-                      const gradesWithPoints = subjects.map(s => getStudentGrade(user?.id || '', s.id)).filter(Boolean).map(getGradePoints);
-                      if (gradesWithPoints.length === 0) return 'N/A';
-                      const avgPoints = gradesWithPoints.reduce((a, b) => a + b, 0) / gradesWithPoints.length;
-                      return avgPoints >= 9.5 ? 'A+' : avgPoints >= 8.5 ? 'A' : avgPoints >= 7.5 ? 'B+' : 'B';
+                      const studentGrades = subjects.map(s => getStudentGrade(user?.id || '', s.id)).filter(g => g !== undefined) as number[];
+                      if (studentGrades.length === 0) return 'N/A';
+                      const avgGrade = studentGrades.reduce((a, b) => a + b, 0) / studentGrades.length;
+                      return avgGrade.toFixed(1);
                     })()}</span>
                   </div>
                 </div>
@@ -160,7 +147,7 @@ const Grades = () => {
                       </div>
                       {studentGrade && (
                         <Badge className={getGradeColor(studentGrade)}>
-                          {studentGrade}
+                          {studentGrade.toFixed(1)}/10
                         </Badge>
                       )}
                     </div>
@@ -170,8 +157,12 @@ const Grades = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Grade Points:</span>
                         <span className="font-medium text-foreground">
-                          {studentGrade ? getGradePoints(studentGrade) : 'N/A'}
+                          {studentGrade ? studentGrade.toFixed(1) : 'N/A'}
                         </span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Credits:</span>
+                        <span className="font-medium text-foreground">{subject.credits}</span>
                       </div>
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Teacher:</span>
@@ -179,7 +170,7 @@ const Grades = () => {
                       </div>
                       {studentGrade && (
                         <Progress 
-                          value={getGradePoints(studentGrade) * 10} 
+                          value={studentGrade * 10} 
                           className="h-2"
                         />
                       )}
@@ -210,16 +201,16 @@ const Grades = () => {
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-foreground">{student.name}</h4>
                       <Badge variant="outline" className="text-primary">
-                        {student.cgpa}/10
+                        {calculateCGPA(student.id).toFixed(2)}/10
                       </Badge>
                     </div>
                     <Progress 
-                      value={getCGPAProgress(student.cgpa || 0)} 
+                      value={getCGPAProgress(calculateCGPA(student.id))} 
                       className="h-2 mb-2"
                     />
                     <p className="text-xs text-muted-foreground">
-                      {student.cgpa && student.cgpa >= 9 ? 'Excellent' : 
-                       student.cgpa && student.cgpa >= 8 ? 'Good' : 'Average'}
+                      {calculateCGPA(student.id) >= 9 ? 'Excellent' : 
+                       calculateCGPA(student.id) >= 8 ? 'Good' : 'Average'}
                     </p>
                   </div>
                 ))}
@@ -240,10 +231,10 @@ const Grades = () => {
                 {subjects.map((subject) => (
                   <div key={subject.id} className="border border-border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-medium text-foreground">{subject.name}</h4>
-                        <p className="text-sm text-muted-foreground">Teacher: {subject.teacher}</p>
-                      </div>
+                        <div>
+                          <h4 className="font-medium text-foreground">{subject.name}</h4>
+                          <p className="text-sm text-muted-foreground">Teacher: {subject.teacher} | Credits: {subject.credits}</p>
+                        </div>
                       <Button 
                         variant="outline" 
                         size="sm"
@@ -266,11 +257,11 @@ const Grades = () => {
                         return (
                           <div key={student.id} 
                                className="flex items-center justify-between p-2 bg-muted/50 rounded cursor-pointer hover:bg-muted/70 transition-colors"
-                               onClick={() => openGradeDialog(student.id, subject.id, student.name, subject.name)}
+                             onClick={() => openGradeDialog(student.id, subject.id, student.name, subject.name)}
                           >
                             <span className="text-sm font-medium text-foreground">{student.name}</span>
-                            <Badge className={getGradeColor(studentGrade || 'N/A')}>
-                              {studentGrade || 'Not Graded'}
+                            <Badge className={getGradeColor(studentGrade || 0)}>
+                              {studentGrade ? studentGrade.toFixed(1) : 'Not Graded'}
                             </Badge>
                           </div>
                         );

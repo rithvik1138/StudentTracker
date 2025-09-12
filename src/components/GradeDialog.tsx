@@ -1,21 +1,10 @@
 import { useState } from 'react';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { useAuth } from "@/context/AuthContext";
+import { useAuth } from '@/context/AuthContext';
+import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 interface GradeDialogProps {
   open: boolean;
@@ -26,26 +15,27 @@ interface GradeDialogProps {
   subjectName: string;
 }
 
-const GradeDialog = ({
-  open,
-  onOpenChange,
-  studentId,
-  subjectId,
-  studentName,
-  subjectName,
-}: GradeDialogProps) => {
-  const { getStudentGrade, updateStudentGrade } = useAuth();
-  const [selectedGrade, setSelectedGrade] = useState(
-    getStudentGrade(studentId, subjectId) || ''
-  );
+const GradeDialog = ({ open, onOpenChange, studentId, subjectId, studentName, subjectName }: GradeDialogProps) => {
+  const { updateStudentGrade, grades } = useAuth();
+  const currentGrade = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
+  
+  const [obtainedMarks, setObtainedMarks] = useState(currentGrade?.obtainedMarks?.toString() || '');
+  const [maxMarks, setMaxMarks] = useState(currentGrade?.maxMarks?.toString() || '100');
 
-  const grades = ['A+', 'A', 'B+', 'B', 'C+', 'C', 'D', 'F'];
-
-  const handleSave = () => {
-    if (selectedGrade) {
-      updateStudentGrade(studentId, subjectId, selectedGrade);
-      onOpenChange(false);
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    const obtained = parseFloat(obtainedMarks);
+    const max = parseFloat(maxMarks);
+    
+    if (isNaN(obtained) || isNaN(max) || obtained < 0 || max <= 0 || obtained > max) {
+      toast.error('Please enter valid marks');
+      return;
     }
+
+    updateStudentGrade(studentId, subjectId, obtained, max);
+    toast.success(`Grade updated for ${studentName} in ${subjectName}`);
+    onOpenChange(false);
   };
 
   return (
@@ -54,36 +44,48 @@ const GradeDialog = ({
         <DialogHeader>
           <DialogTitle>Update Grade</DialogTitle>
           <DialogDescription>
-            Update the grade for {studentName} in {subjectName}
+            Update grade for {studentName} in {subjectName}
           </DialogDescription>
         </DialogHeader>
-        
-        <div className="grid gap-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="grade">Grade</Label>
-            <Select value={selectedGrade} onValueChange={setSelectedGrade}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select a grade" />
-              </SelectTrigger>
-              <SelectContent>
-                {grades.map((grade) => (
-                  <SelectItem key={grade} value={grade}>
-                    {grade}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="maxMarks">Maximum Marks</Label>
+              <Input
+                id="maxMarks"
+                type="number"
+                value={maxMarks}
+                onChange={(e) => setMaxMarks(e.target.value)}
+                placeholder="100"
+                min="1"
+                required
+              />
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="obtainedMarks">Obtained Marks</Label>
+              <Input
+                id="obtainedMarks"
+                type="number"
+                value={obtainedMarks}
+                onChange={(e) => setObtainedMarks(e.target.value)}
+                placeholder="85"
+                min="0"
+                max={maxMarks}
+                step="0.1"
+                required
+              />
+            </div>
+            <div className="text-sm text-muted-foreground">
+              Current Grade: {currentGrade ? (currentGrade.grade).toFixed(1) : 'Not graded'}/10
+            </div>
           </div>
-        </div>
-
-        <div className="flex justify-end gap-2">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={!selectedGrade}>
-            Save Grade
-          </Button>
-        </div>
+          <div className="flex justify-end space-x-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button type="submit">Update Grade</Button>
+          </div>
+        </form>
       </DialogContent>
     </Dialog>
   );
