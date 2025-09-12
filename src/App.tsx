@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import Subjects from "@/pages/Subjects";
 import Grades from "@/pages/Grades";
 import Attendance from "@/pages/Attendance";
+import Students from "@/pages/Students";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +43,13 @@ const AppRoutes = () => (
       <ProtectedRoute>
         <DashboardLayout>
           <Subjects />
+        </DashboardLayout>
+      </ProtectedRoute>
+    } />
+    <Route path="/students" element={
+      <ProtectedRoute>
+        <DashboardLayout>
+          <Students />
         </DashboardLayout>
       </ProtectedRoute>
     } />

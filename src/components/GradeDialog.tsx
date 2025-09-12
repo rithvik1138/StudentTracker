@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
@@ -19,21 +19,23 @@ const GradeDialog = ({ open, onOpenChange, studentId, subjectId, studentName, su
   const { updateStudentGrade, grades } = useAuth();
   const currentGrade = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
   
-  const [obtainedMarks, setObtainedMarks] = useState(currentGrade?.obtainedMarks?.toString() || '');
-  const [maxMarks, setMaxMarks] = useState(currentGrade?.maxMarks?.toString() || '100');
+  const [selectedGrade, setSelectedGrade] = useState(currentGrade?.grade?.toString() || '');
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    const obtained = parseFloat(obtainedMarks);
-    const max = parseFloat(maxMarks);
-    
-    if (isNaN(obtained) || isNaN(max) || obtained < 0 || max <= 0 || obtained > max) {
-      toast.error('Please enter valid marks');
+    if (!selectedGrade) {
+      toast.error('Please select a grade');
       return;
     }
 
-    updateStudentGrade(studentId, subjectId, obtained, max);
+    const grade = parseFloat(selectedGrade);
+    if (grade < 1 || grade > 10) {
+      toast.error('Grade must be between 1 and 10');
+      return;
+    }
+
+    updateStudentGrade(studentId, subjectId, grade, 10);
     toast.success(`Grade updated for ${studentName} in ${subjectName}`);
     onOpenChange(false);
   };
@@ -50,33 +52,22 @@ const GradeDialog = ({ open, onOpenChange, studentId, subjectId, studentName, su
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="maxMarks">Maximum Marks</Label>
-              <Input
-                id="maxMarks"
-                type="number"
-                value={maxMarks}
-                onChange={(e) => setMaxMarks(e.target.value)}
-                placeholder="100"
-                min="1"
-                required
-              />
-            </div>
-            <div className="grid gap-2">
-              <Label htmlFor="obtainedMarks">Obtained Marks</Label>
-              <Input
-                id="obtainedMarks"
-                type="number"
-                value={obtainedMarks}
-                onChange={(e) => setObtainedMarks(e.target.value)}
-                placeholder="85"
-                min="0"
-                max={maxMarks}
-                step="0.1"
-                required
-              />
+              <Label htmlFor="grade">Grade (1-10)</Label>
+              <Select value={selectedGrade} onValueChange={setSelectedGrade}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a grade" />
+                </SelectTrigger>
+                <SelectContent>
+                  {[1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5, 5.5, 6, 6.5, 7, 7.5, 8, 8.5, 9, 9.5, 10].map((grade) => (
+                    <SelectItem key={grade} value={grade.toString()}>
+                      {grade}/10
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="text-sm text-muted-foreground">
-              Current Grade: {currentGrade ? (currentGrade.grade).toFixed(1) : 'Not graded'}/10
+              Current Grade: {currentGrade ? currentGrade.grade.toFixed(1) : 'Not graded'}/10
             </div>
           </div>
           <div className="flex justify-end space-x-2">

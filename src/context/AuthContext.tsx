@@ -89,18 +89,18 @@ const mockSubjects: Subject[] = [
 ];
 
 const mockGrades: StudentGrade[] = [
-  { id: '1', studentId: '1', subjectId: '1', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
-  { id: '2', studentId: '1', subjectId: '2', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
-  { id: '3', studentId: '1', subjectId: '3', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
-  { id: '4', studentId: '1', subjectId: '4', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
-  { id: '5', studentId: '2', subjectId: '1', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
-  { id: '6', studentId: '2', subjectId: '2', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
-  { id: '7', studentId: '2', subjectId: '3', grade: 9.5, maxMarks: 100, obtainedMarks: 95 },
-  { id: '8', studentId: '2', subjectId: '4', grade: 9.0, maxMarks: 100, obtainedMarks: 90 },
-  { id: '9', studentId: '3', subjectId: '1', grade: 8.0, maxMarks: 100, obtainedMarks: 80 },
-  { id: '10', studentId: '3', subjectId: '2', grade: 7.0, maxMarks: 100, obtainedMarks: 70 },
-  { id: '11', studentId: '3', subjectId: '3', grade: 8.0, maxMarks: 100, obtainedMarks: 80 },
-  { id: '12', studentId: '3', subjectId: '4', grade: 7.0, maxMarks: 100, obtainedMarks: 70 },
+  { id: '1', studentId: '1', subjectId: '1', grade: 9.0, maxMarks: 10, obtainedMarks: 9.0 },
+  { id: '2', studentId: '1', subjectId: '2', grade: 9.0, maxMarks: 10, obtainedMarks: 9.0 },
+  { id: '3', studentId: '1', subjectId: '3', grade: 9.0, maxMarks: 10, obtainedMarks: 9.0 },
+  { id: '4', studentId: '1', subjectId: '4', grade: 9.0, maxMarks: 10, obtainedMarks: 9.0 },
+  { id: '5', studentId: '2', subjectId: '1', grade: 8.5, maxMarks: 10, obtainedMarks: 8.5 },
+  { id: '6', studentId: '2', subjectId: '2', grade: 8.5, maxMarks: 10, obtainedMarks: 8.5 },
+  { id: '7', studentId: '2', subjectId: '3', grade: 8.5, maxMarks: 10, obtainedMarks: 8.5 },
+  { id: '8', studentId: '2', subjectId: '4', grade: 8.5, maxMarks: 10, obtainedMarks: 8.5 },
+  { id: '9', studentId: '3', subjectId: '1', grade: 8.3, maxMarks: 10, obtainedMarks: 8.3 },
+  { id: '10', studentId: '3', subjectId: '2', grade: 8.3, maxMarks: 10, obtainedMarks: 8.3 },
+  { id: '11', studentId: '3', subjectId: '3', grade: 8.3, maxMarks: 10, obtainedMarks: 8.3 },
+  { id: '12', studentId: '3', subjectId: '4', grade: 8.3, maxMarks: 10, obtainedMarks: 8.3 },
 ];
 
 const mockAttendance: AttendanceRecord[] = [
@@ -244,14 +244,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setGrades(prev => prev.filter(g => g.studentId !== studentId));
   };
 
-  const updateStudentGrade = (studentId: string, subjectId: string, obtainedMarks: number, maxMarks: number) => {
-    const grade = (obtainedMarks / maxMarks) * 10;
+  const updateStudentGrade = (studentId: string, subjectId: string, grade: number, maxMarks: number = 10) => {
     setGrades(prev => {
       const existingGrade = prev.find(g => g.studentId === studentId && g.subjectId === subjectId);
       if (existingGrade) {
         return prev.map(g => 
           g.studentId === studentId && g.subjectId === subjectId 
-            ? { ...g, grade, obtainedMarks, maxMarks } 
+            ? { ...g, grade, obtainedMarks: grade, maxMarks } 
             : g
         );
       } else {
@@ -260,11 +259,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           studentId,
           subjectId,
           grade,
-          obtainedMarks,
+          obtainedMarks: grade,
           maxMarks
         }];
       }
     });
+    
+    // Update user CGPA
+    setUsers(prev => prev.map(user => 
+      user.id === studentId 
+        ? { ...user, cgpa: calculateCGPA(studentId) }
+        : user
+    ));
   };
 
   const getStudentGrade = (studentId: string, subjectId: string) => {

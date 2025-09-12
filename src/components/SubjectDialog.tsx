@@ -13,7 +13,7 @@ interface SubjectDialogProps {
 }
 
 const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps) => {
-  const { addSubject } = useAuth();
+  const { addSubject, addAttendance, updateStudentGrade, users } = useAuth();
   const [name, setName] = useState(subject?.name || '');
   const [teacher, setTeacher] = useState(subject?.teacher || 'Narayana');
   const [credits, setCredits] = useState(subject?.credits?.toString() || '4');
@@ -30,6 +30,28 @@ const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps
 
     if (mode === 'add') {
       addSubject(newSubject);
+      
+      // Create default attendance and grade records for all students when adding a new subject
+      const students = users.filter(u => u.role === 'student');
+      students.forEach(student => {
+        // Add default attendance records (5 classes with 80% attendance)
+        for (let i = 0; i < 5; i++) {
+          const date = new Date();
+          date.setDate(date.getDate() - i);
+          const status = i < 4 ? 'present' : 'absent'; // 4 present, 1 absent = 80%
+          
+          addAttendance({
+            id: `${Date.now()}-${student.id}-${i}`,
+            studentId: student.id,
+            subject: name.trim(),
+            date: date.toISOString().split('T')[0],
+            status: status as 'present' | 'absent' | 'late'
+          });
+        }
+        
+        // Add default grade of 0 for all students in the new subject
+        updateStudentGrade(student.id, newSubject.id, 0, 10);
+      });
     }
     // Edit functionality would be implemented similarly
 
