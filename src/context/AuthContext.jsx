@@ -1,75 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 
-export interface User {
-  id: string;
-  name: string;
-  email: string;
-  role: 'student' | 'admin' | 'teacher';
-  cgpa?: number;
-  assignedSubjects?: string[]; // For teachers
-}
-
-export interface Subject {
-  id: string;
-  name: string;
-  teacher: string;
-  credits: number;
-}
-
-export interface StudentGrade {
-  id: string;
-  studentId: string;
-  subjectId: string;
-  grade: number;
-  maxMarks: number;
-  obtainedMarks: number;
-}
-
-export interface AttendanceRecord {
-  id: string;
-  studentId: string;
-  subject: string;
-  date: string;
-  status: 'present' | 'absent' | 'late';
-}
-
-export interface Assignment {
-  id: string;
-  title: string;
-  subject: string;
-  dueDate: string;
-  status: 'pending' | 'submitted' | 'graded';
-}
-
-interface AuthContextType {
-  user: User | null;
-  login: (email: string, password: string) => boolean;
-  logout: () => void;
-  users: User[];
-  subjects: Subject[];
-  grades: StudentGrade[];
-  attendance: AttendanceRecord[];
-  assignments: Assignment[];
-  addAttendance: (record: AttendanceRecord) => void;
-  updateAttendance: (id: string, status: 'present' | 'absent' | 'late') => void;
-  addSubjectToStudent: (studentId: string, subject: Subject) => void;
-  removeSubjectFromStudent: (studentId: string, subjectId: string) => void;
-  addSubject: (subject: Subject) => void;
-  removeSubject: (subjectId: string) => void;
-  addStudent: (student: User) => void;
-  removeStudent: (studentId: string) => void;
-  updateStudentGrade: (studentId: string, subjectId: string, obtainedMarks: number, maxMarks: number) => void;
-  getStudentGrade: (studentId: string, subjectId: string) => number | undefined;
-  calculateCGPA: (studentId: string) => number;
-  addTeacher: (teacher: User) => void;
-  removeTeacher: (teacherId: string) => void;
-  updateTeacher: (teacherId: string, data: Partial<User>) => void;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext(undefined);
 
 // Mock data - Update CGPA with calculateCGPA function
-const mockUsers: User[] = [
+const mockUsers = [
   { id: '1', name: 'Rithvik', email: 'rithvik@student.com', role: 'student', cgpa: 9.0 },
   { id: '2', name: 'Jeethu', email: 'jeethu@student.com', role: 'student', cgpa: 8.5 },
   { id: '3', name: 'Pardhav', email: 'pardhav@student.com', role: 'student', cgpa: 8.3 },
@@ -85,14 +19,14 @@ const mockCredentials = {
   'narayana@teacher.com': 'teacher123',
 };
 
-const mockSubjects: Subject[] = [
+const mockSubjects = [
   { id: '1', name: 'CIE', teacher: 'Narayana', credits: 4 },
   { id: '2', name: 'CICD', teacher: 'Narayana', credits: 5 },
   { id: '3', name: 'TOC', teacher: 'Narayana', credits: 4 },
   { id: '4', name: 'Certificate Course', teacher: 'Narayana', credits: 5 },
 ];
 
-const mockGrades: StudentGrade[] = [
+const mockGrades = [
   { id: '1', studentId: '1', subjectId: '1', grade: 9.0, maxMarks: 10, obtainedMarks: 9.0 },
   { id: '2', studentId: '1', subjectId: '2', grade: 9.0, maxMarks: 10, obtainedMarks: 9.0 },
   { id: '3', studentId: '1', subjectId: '3', grade: 9.0, maxMarks: 10, obtainedMarks: 9.0 },
@@ -107,7 +41,7 @@ const mockGrades: StudentGrade[] = [
   { id: '12', studentId: '3', subjectId: '4', grade: 8.3, maxMarks: 10, obtainedMarks: 8.3 },
 ];
 
-const mockAttendance: AttendanceRecord[] = [
+const mockAttendance = [
   // Rithvik - 85% attendance (17/20 classes present)
   { id: '1', studentId: '1', subject: 'CIE', date: '2025-09-02', status: 'present' },
   { id: '2', studentId: '1', subject: 'CICD', date: '2025-09-02', status: 'present' },
@@ -175,18 +109,18 @@ const mockAttendance: AttendanceRecord[] = [
   { id: '60', studentId: '3', subject: 'Certificate Course', date: '2025-09-06', status: 'present' },
 ];
 
-const mockAssignments: Assignment[] = [
+const mockAssignments = [
   { id: '1', title: 'Home Assignment of CIE', subject: 'CIE', dueDate: '2025-09-15', status: 'pending' },
   { id: '2', title: 'Home Assignment of CICD', subject: 'CICD', dueDate: '2025-09-20', status: 'pending' },
 ];
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>(mockUsers);
-  const [subjects, setSubjects] = useState<Subject[]>(mockSubjects);
-  const [grades, setGrades] = useState<StudentGrade[]>(mockGrades);
-  const [attendance, setAttendance] = useState<AttendanceRecord[]>(mockAttendance);
-  const [assignments] = useState<Assignment[]>(mockAssignments);
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [users, setUsers] = useState(mockUsers);
+  const [subjects, setSubjects] = useState(mockSubjects);
+  const [grades, setGrades] = useState(mockGrades);
+  const [attendance, setAttendance] = useState(mockAttendance);
+  const [assignments] = useState(mockAssignments);
 
   useEffect(() => {
     const savedUser = localStorage.getItem('studentTracker_user');
@@ -195,8 +129,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  const login = (email: string, password: string): boolean => {
-    if (mockCredentials[email as keyof typeof mockCredentials] === password) {
+  const login = (email, password) => {
+    if (mockCredentials[email] === password) {
       const foundUser = users.find(u => u.email === email);
       if (foundUser) {
         setUser(foundUser);
@@ -212,43 +146,43 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     localStorage.removeItem('studentTracker_user');
   };
 
-  const addAttendance = (record: AttendanceRecord) => {
+  const addAttendance = (record) => {
     setAttendance(prev => [...prev, record]);
   };
 
-  const updateAttendance = (id: string, status: 'present' | 'absent' | 'late') => {
+  const updateAttendance = (id, status) => {
     setAttendance(prev => prev.map(record => 
       record.id === id ? { ...record, status } : record
     ));
   };
 
-  const addSubjectToStudent = (studentId: string, subject: Subject) => {
+  const addSubjectToStudent = (studentId, subject) => {
     // Implementation for adding subject to student
   };
 
-  const removeSubjectFromStudent = (studentId: string, subjectId: string) => {
+  const removeSubjectFromStudent = (studentId, subjectId) => {
     // Implementation for removing subject from student
   };
 
-  const addSubject = (subject: Subject) => {
+  const addSubject = (subject) => {
     setSubjects(prev => [...prev, subject]);
   };
 
-  const removeSubject = (subjectId: string) => {
+  const removeSubject = (subjectId) => {
     setSubjects(prev => prev.filter(s => s.id !== subjectId));
   };
 
-  const addStudent = (student: User) => {
+  const addStudent = (student) => {
     setUsers(prev => [...prev, student]);
   };
 
-  const removeStudent = (studentId: string) => {
+  const removeStudent = (studentId) => {
     setUsers(prev => prev.filter(u => u.id !== studentId));
     setAttendance(prev => prev.filter(a => a.studentId !== studentId));
     setGrades(prev => prev.filter(g => g.studentId !== studentId));
   };
 
-  const updateStudentGrade = (studentId: string, subjectId: string, grade: number, maxMarks: number = 10) => {
+  const updateStudentGrade = (studentId, subjectId, grade, maxMarks = 10) => {
     setGrades(prev => {
       const existingGrade = prev.find(g => g.studentId === studentId && g.subjectId === subjectId);
       if (existingGrade) {
@@ -277,26 +211,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ));
   };
 
-  const getStudentGrade = (studentId: string, subjectId: string) => {
+  const getStudentGrade = (studentId, subjectId) => {
     const gradeRecord = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
     return gradeRecord?.grade;
   };
 
-  const addTeacher = (teacher: User) => {
+  const addTeacher = (teacher) => {
     setUsers(prev => [...prev, teacher]);
   };
 
-  const removeTeacher = (teacherId: string) => {
+  const removeTeacher = (teacherId) => {
     setUsers(prev => prev.filter(u => u.id !== teacherId));
   };
 
-  const updateTeacher = (teacherId: string, data: Partial<User>) => {
+  const updateTeacher = (teacherId, data) => {
     setUsers(prev => prev.map(user => 
       user.id === teacherId ? { ...user, ...data } : user
     ));
   };
 
-  const calculateCGPA = (studentId: string) => {
+  const calculateCGPA = (studentId) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
 
