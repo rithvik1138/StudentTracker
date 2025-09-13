@@ -61,8 +61,8 @@ export function AppSidebar() {
   
   const collapsed = state === "collapsed";
 
-  const isActive = (path: string) => currentPath === path;
-  const getNavCls = ({ isActive }: { isActive: boolean }) =>
+  const isActive = (path) => currentPath === path;
+  const getNavCls = ({ isActive }) =>
     isActive ? "bg-primary/10 text-primary font-medium border-r-2 border-primary" : "hover:bg-accent";
 
   const menuItems = user?.role === 'student' 

@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import GradeDialog from '@/components/GradeDialog';
+import GradeDialog from '@/components/GradeDialog.jsx';
 import { 
   GraduationCap, 
   TrendingUp, 
@@ -34,7 +34,7 @@ const Grades = () => {
   const canManageGrades = user?.role === 'admin' || user?.role === 'teacher';
   const students = users.filter(u => u.role === 'student');
 
-  const openGradeDialog = (studentId: string, subjectId: string, studentName: string, subjectName: string) => {
+  const openGradeDialog = (studentId, subjectId, studentName, subjectName) => {
     setGradeDialog({
       open: true,
       studentId,
@@ -48,7 +48,7 @@ const Grades = () => {
     setGradeDialog(prev => ({ ...prev, open: false }));
   };
 
-  const getGradeColor = (grade: number) => {
+  const getGradeColor = (grade) => {
     if (grade >= 9.5) return 'bg-success text-success-foreground';
     if (grade >= 8.5) return 'bg-primary text-primary-foreground';
     if (grade >= 7.5) return 'bg-warning text-warning-foreground';
@@ -56,7 +56,7 @@ const Grades = () => {
     return 'bg-muted text-muted-foreground';
   };
 
-  const getCGPAProgress = (cgpa: number) => (cgpa / 10) * 100;
+  const getCGPAProgress = (cgpa) => (cgpa / 10) * 100;
 
   return (
     <div className="space-y-6">

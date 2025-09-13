@@ -1,10 +1,10 @@
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Plus, UserX, Edit } from 'lucide-react';
-import StudentDialog from '@/components/StudentDialog';
+import StudentDialog from '@/components/StudentDialog.jsx';
 
 const Students = () => {
   const { user, users, removeStudent } = useAuth();
@@ -30,7 +30,7 @@ const Students = () => {
     setDialogOpen(true);
   };
 
-  const handleEditStudent = (student: any) => {
+  const handleEditStudent = (student) => {
     setEditingStudent(student);
     setDialogOpen(true);
   };

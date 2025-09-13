@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { UserCheck, Mail, BookOpen, Trash2, Search } from 'lucide-react';
-import TeacherDialog from '@/components/TeacherDialog';
+import TeacherDialog from '@/components/TeacherDialog.jsx';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 const Teachers = () => {
@@ -20,7 +20,7 @@ const Teachers = () => {
     teacher.email.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getAssignedSubjects = (teacherId: string) => {
+  const getAssignedSubjects = (teacherId) => {
     const teacher = teachers.find(t => t.id === teacherId);
     if (!teacher?.assignedSubjects) return [];
     
@@ -29,7 +29,7 @@ const Teachers = () => {
     );
   };
 
-  const handleDeleteTeacher = (teacherId: string) => {
+  const handleDeleteTeacher = (teacherId) => {
     removeTeacher(teacherId);
   };
 

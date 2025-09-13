@@ -1,4 +1,4 @@
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { 
@@ -60,7 +60,7 @@ const Dashboard = () => {
     return attendance.slice(-5).reverse();
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'present': return 'bg-success text-success-foreground';
       case 'late': return 'bg-warning text-warning-foreground';

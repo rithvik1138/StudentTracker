@@ -1,12 +1,12 @@
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { BookOpen, User, Plus, Trash2, UserPlus, UserMinus } from 'lucide-react';
-import SubjectDialog from '@/components/SubjectDialog';
-import StudentDialog from '@/components/StudentDialog';
+import SubjectDialog from '@/components/SubjectDialog.jsx';
+import StudentDialog from '@/components/StudentDialog.jsx';
 
 const Subjects = () => {
   const { user, subjects, removeSubject, users, removeStudent, getStudentGrade } = useAuth();
@@ -21,7 +21,7 @@ const Subjects = () => {
 
   const students = users.filter(u => u.role === 'student');
 
-  const getGradeColor = (grade: number) => {
+  const getGradeColor = (grade) => {
     if (grade >= 9.5) return 'bg-success text-success-foreground';
     if (grade >= 8.5) return 'bg-primary text-primary-foreground';
     if (grade >= 7.5) return 'bg-warning text-warning-foreground';

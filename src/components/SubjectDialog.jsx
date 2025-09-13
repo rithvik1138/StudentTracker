@@ -3,16 +3,9 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, Subject } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 
-interface SubjectDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  subject?: Subject | null;
-  mode: 'add' | 'edit';
-}
-
-const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps) => {
+const SubjectDialog = ({ open, onOpenChange, subject, mode }) => {
   const { addSubject, addAttendance, updateStudentGrade, users } = useAuth();
   const [name, setName] = useState(subject?.name || '');
   const [teacher, setTeacher] = useState(subject?.teacher || 'Narayana');
@@ -21,8 +14,8 @@ const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps
   const handleSubmit = () => {
     if (!name.trim()) return;
 
-    const newSubject: Subject = {
-      id: mode === 'add' ? Date.now().toString() : subject!.id,
+    const newSubject = {
+      id: mode === 'add' ? Date.now().toString() : subject.id,
       name: name.trim(),
       teacher: teacher.trim(),
       credits: parseInt(credits)
@@ -45,7 +38,7 @@ const SubjectDialog = ({ open, onOpenChange, subject, mode }: SubjectDialogProps
             studentId: student.id,
             subject: name.trim(),
             date: date.toISOString().split('T')[0],
-            status: status as 'present' | 'absent' | 'late'
+            status: status
           });
         }
         

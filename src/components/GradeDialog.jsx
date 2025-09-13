@@ -1,27 +1,18 @@
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 
-interface GradeDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  studentId: string;
-  subjectId: string;
-  studentName: string;
-  subjectName: string;
-}
-
-const GradeDialog = ({ open, onOpenChange, studentId, subjectId, studentName, subjectName }: GradeDialogProps) => {
+const GradeDialog = ({ open, onOpenChange, studentId, subjectId, studentName, subjectName }) => {
   const { updateStudentGrade, grades } = useAuth();
   const currentGrade = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
   
   const [selectedGrade, setSelectedGrade] = useState(currentGrade?.grade?.toString() || '');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     if (!selectedGrade) {

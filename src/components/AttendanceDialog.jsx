@@ -2,23 +2,15 @@ import { useState } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth, AttendanceRecord } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { CheckCircle, XCircle, Clock } from 'lucide-react';
 
-interface AttendanceDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  studentId: string;
-  studentName: string;
-  subject: string;
-}
-
-const AttendanceDialog = ({ open, onOpenChange, studentId, studentName, subject }: AttendanceDialogProps) => {
+const AttendanceDialog = ({ open, onOpenChange, studentId, studentName, subject }) => {
   const { addAttendance } = useAuth();
-  const [status, setStatus] = useState<'present' | 'absent' | 'late'>('present');
+  const [status, setStatus] = useState('present');
 
   const handleSubmit = () => {
-    const newRecord: AttendanceRecord = {
+    const newRecord = {
       id: Date.now().toString(),
       studentId,
       subject,
@@ -31,7 +23,7 @@ const AttendanceDialog = ({ open, onOpenChange, studentId, studentName, subject 
     setStatus('present');
   };
 
-  const getStatusIcon = (statusValue: string) => {
+  const getStatusIcon = (statusValue) => {
     switch (statusValue) {
       case 'present': return <CheckCircle className="w-4 h-4 text-success" />;
       case 'late': return <Clock className="w-4 h-4 text-warning" />;
@@ -53,7 +45,7 @@ const AttendanceDialog = ({ open, onOpenChange, studentId, studentName, subject 
         <div className="space-y-4">
           <div>
             <label className="text-sm font-medium text-foreground">Status</label>
-            <Select value={status} onValueChange={(value: 'present' | 'absent' | 'late') => setStatus(value)}>
+            <Select value={status} onValueChange={(value) => setStatus(value)}>
               <SelectTrigger className="mt-1">
                 <SelectValue />
               </SelectTrigger>

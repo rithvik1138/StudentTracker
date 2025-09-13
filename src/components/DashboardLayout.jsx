@@ -1,5 +1,5 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
-import { AppSidebar } from "@/components/AppSidebar";
+import { AppSidebar } from "@/components/AppSidebar.jsx";
 import { useAuth } from '@/context/AuthContext.jsx';
 
 const DashboardLayout = ({ children }) => {

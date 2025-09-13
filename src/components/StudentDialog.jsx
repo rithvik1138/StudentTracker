@@ -4,27 +4,20 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAuth, User } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 
-interface StudentDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  student?: User | null;
-  mode: 'add' | 'edit';
-}
-
-const StudentDialog = ({ open, onOpenChange, student, mode }: StudentDialogProps) => {
+const StudentDialog = ({ open, onOpenChange, student, mode }) => {
   const { addStudent } = useAuth();
   const [name, setName] = useState(student?.name || '');
   const [email, setEmail] = useState(student?.email || '');
-  const [role, setRole] = useState<'student' | 'teacher' | 'admin'>(student?.role || 'student');
+  const [role, setRole] = useState(student?.role || 'student');
   const [cgpa, setCgpa] = useState(student?.cgpa?.toString() || '');
 
   const handleSubmit = () => {
     if (!name.trim() || !email.trim()) return;
 
-    const newStudent: User = {
-      id: mode === 'add' ? Date.now().toString() : student!.id,
+    const newStudent = {
+      id: mode === 'add' ? Date.now().toString() : student.id,
       name: name.trim(),
       email: email.trim(),
       role,
@@ -78,7 +71,7 @@ const StudentDialog = ({ open, onOpenChange, student, mode }: StudentDialogProps
           </div>
           <div>
             <Label htmlFor="role">Role</Label>
-            <Select value={role} onValueChange={(value: 'student' | 'teacher' | 'admin') => setRole(value)}>
+            <Select value={role} onValueChange={(value) => setRole(value)}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>

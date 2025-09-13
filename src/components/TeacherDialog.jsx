@@ -5,16 +5,9 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, Pencil } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import type { User, Subject } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 
-interface TeacherDialogProps {
-  teacher?: User;
-  trigger?: React.ReactNode;
-  onSuccess?: () => void;
-}
-
-const TeacherDialog = ({ teacher, trigger, onSuccess }: TeacherDialogProps) => {
+const TeacherDialog = ({ teacher, trigger, onSuccess }) => {
   const { subjects, addTeacher, updateTeacher } = useAuth();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
@@ -23,13 +16,13 @@ const TeacherDialog = ({ teacher, trigger, onSuccess }: TeacherDialogProps) => {
     assignedSubjects: teacher?.assignedSubjects || [],
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     
     if (teacher) {
       updateTeacher(teacher.id, formData);
     } else {
-      const newTeacher: User = {
+      const newTeacher = {
         id: Date.now().toString(),
         name: formData.name,
         email: formData.email,
@@ -52,7 +45,7 @@ const TeacherDialog = ({ teacher, trigger, onSuccess }: TeacherDialogProps) => {
     }
   };
 
-  const handleSubjectToggle = (subjectId: string) => {
+  const handleSubjectToggle = (subjectId) => {
     setFormData(prev => ({
       ...prev,
       assignedSubjects: prev.assignedSubjects.includes(subjectId)

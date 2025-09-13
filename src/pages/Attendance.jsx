@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
+import { useAuth } from '@/context/AuthContext.jsx';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,7 @@ import {
   User,
   Plus
 } from 'lucide-react';
-import AttendanceDialog from '@/components/AttendanceDialog';
+import AttendanceDialog from '@/components/AttendanceDialog.jsx';
 
 const Attendance = () => {
   const { user, attendance, subjects, users } = useAuth();
@@ -32,7 +32,7 @@ const Attendance = () => {
   const isStudent = user?.role === 'student';
   const students = users.filter(u => u.role === 'student');
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case 'present': return 'bg-success text-success-foreground';
       case 'late': return 'bg-warning text-warning-foreground';
@@ -41,7 +41,7 @@ const Attendance = () => {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status) => {
     switch (status) {
       case 'present': return <CheckCircle className="w-4 h-4" />;
       case 'late': return <Clock className="w-4 h-4" />;
@@ -50,7 +50,7 @@ const Attendance = () => {
     }
   };
 
-  const getStudentAttendance = (studentId: string) => {
+  const getStudentAttendance = (studentId) => {
     const studentAttendance = attendance.filter(a => a.studentId === studentId);
     const totalClasses = studentAttendance.length;
     const presentClasses = studentAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
@@ -63,7 +63,7 @@ const Attendance = () => {
     };
   };
 
-  const getSubjectAttendance = (studentId: string, subjectName: string) => {
+  const getSubjectAttendance = (studentId, subjectName) => {
     const subjectAttendance = attendance.filter(a => a.studentId === studentId && a.subject === subjectName);
     const totalClasses = subjectAttendance.length;
     const presentClasses = subjectAttendance.filter(a => a.status === 'present' || a.status === 'late').length;

@@ -4,15 +4,15 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext.jsx";
-import LoginPage from "@/components/LoginPage";
-import DashboardLayout from "@/components/DashboardLayout";
-import Dashboard from "@/pages/Dashboard";
-import Subjects from "@/pages/Subjects";
-import Grades from "@/pages/Grades";
-import Attendance from "@/pages/Attendance";
-import Students from "@/pages/Students";
-import Teachers from "@/pages/Teachers";
-import NotFound from "./pages/NotFound";
+import LoginPage from "@/components/LoginPage.jsx";
+import DashboardLayout from "@/components/DashboardLayout.jsx";
+import Dashboard from "@/pages/Dashboard.jsx";
+import Subjects from "@/pages/Subjects.jsx";
+import Grades from "@/pages/Grades.jsx";
+import Attendance from "@/pages/Attendance.jsx";
+import Students from "@/pages/Students.jsx";
+import Teachers from "@/pages/Teachers.jsx";
+import NotFound from "./pages/NotFound.jsx";
 
 const queryClient = new QueryClient();
 
