@@ -23,9 +23,6 @@ const Grades = () => {
     studentName: '',
     subjectName: ''
   });
-    studentName: '',
-    subjectName: '',
-  });
 
   const isStudent = user?.role === 'student';
   const canManageGrades = user?.role === 'admin' || user?.role === 'teacher';

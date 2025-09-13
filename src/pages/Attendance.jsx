@@ -23,7 +23,6 @@ const Attendance = () => {
     studentName: '',
     subject: ''
   });
-  });
 
   const isStudent = user?.role === 'student';
   const students = users.filter(u => u.role === 'student');
