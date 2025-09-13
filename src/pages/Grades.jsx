@@ -114,7 +114,7 @@ const Grades = () => {
                   <div className="flex justify-between">
                     <span className="text-sm text-muted-foreground">Average Grade:</span>
                     <span className="font-medium text-foreground">{(() => {
-                      const studentGrades = subjects.map(s => getStudentGrade(user?.id || '', s.id)).filter(g => g !== undefined) as number[];
+                      const studentGrades = subjects.map(s => getStudentGrade(user?.id || '', s.id)).filter(g => g !== undefined);
                       if (studentGrades.length === 0) return 'N/A';
                       const avgGrade = studentGrades.reduce((a, b) => a + b, 0) / studentGrades.length;
                       return avgGrade.toFixed(1);
