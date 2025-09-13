@@ -10,11 +10,11 @@ import StudentDialog from '@/components/StudentDialog.jsx';
 
 const Subjects = () => {
   const { user, subjects, removeSubject, users, removeStudent, getStudentGrade } = useAuth();
-  const [subjectDialog, setSubjectDialog] = useState<{ open: boolean; subject?: any; mode: 'add' | 'edit' }>({
+  const [subjectDialog, setSubjectDialog] = useState({
     open: false,
     mode: 'add'
   });
-  const [studentDialog, setStudentDialog] = useState<{ open: boolean; student?: any; mode: 'add' | 'edit' }>({
+  const [studentDialog, setStudentDialog] = useState({
     open: false,
     mode: 'add'
   });

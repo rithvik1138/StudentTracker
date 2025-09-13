@@ -16,16 +16,13 @@ import {
 
 const Grades = () => {
   const { user, subjects, grades, users, getStudentGrade, calculateCGPA } = useAuth();
-  const [gradeDialog, setGradeDialog] = useState<{
-    open: boolean;
-    studentId: string;
-    subjectId: string;
-    studentName: string;
-    subjectName: string;
-  }>({
+  const [gradeDialog, setGradeDialog] = useState({
     open: false,
     studentId: '',
     subjectId: '',
+    studentName: '',
+    subjectName: ''
+  });
     studentName: '',
     subjectName: '',
   });

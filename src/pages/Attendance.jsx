@@ -17,16 +17,12 @@ import AttendanceDialog from '@/components/AttendanceDialog.jsx';
 
 const Attendance = () => {
   const { user, attendance, subjects, users } = useAuth();
-  const [attendanceDialog, setAttendanceDialog] = useState<{
-    open: boolean;
-    studentId: string;
-    studentName: string;
-    subject: string;
-  }>({
+  const [attendanceDialog, setAttendanceDialog] = useState({
     open: false,
     studentId: '',
     studentName: '',
     subject: ''
+  });
   });
 
   const isStudent = user?.role === 'student';
