@@ -6,6 +6,7 @@ export interface User {
   email: string;
   role: 'student' | 'admin' | 'teacher';
   cgpa?: number;
+  assignedSubjects?: string[]; // For teachers
 }
 
 export interface Subject {
@@ -60,15 +61,18 @@ interface AuthContextType {
   updateStudentGrade: (studentId: string, subjectId: string, obtainedMarks: number, maxMarks: number) => void;
   getStudentGrade: (studentId: string, subjectId: string) => number | undefined;
   calculateCGPA: (studentId: string) => number;
+  addTeacher: (teacher: User) => void;
+  removeTeacher: (teacherId: string) => void;
+  updateTeacher: (teacherId: string, data: Partial<User>) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 // Mock data - Update CGPA with calculateCGPA function
 const mockUsers: User[] = [
-  { id: '1', name: 'Rithvik', email: 'rithvik@student.com', role: 'student', cgpa: 0 },
-  { id: '2', name: 'Jeethu', email: 'jeethu@student.com', role: 'student', cgpa: 0 },
-  { id: '3', name: 'Pardhav', email: 'pardhav@student.com', role: 'student', cgpa: 0 },
+  { id: '1', name: 'Rithvik', email: 'rithvik@student.com', role: 'student', cgpa: 9.0 },
+  { id: '2', name: 'Jeethu', email: 'jeethu@student.com', role: 'student', cgpa: 8.5 },
+  { id: '3', name: 'Pardhav', email: 'pardhav@student.com', role: 'student', cgpa: 8.3 },
   { id: '4', name: 'D.Rithvik', email: 'admin@studenttracker.com', role: 'admin' },
   { id: '5', name: 'Narayana', email: 'narayana@teacher.com', role: 'teacher' },
 ];
@@ -105,75 +109,75 @@ const mockGrades: StudentGrade[] = [
 
 const mockAttendance: AttendanceRecord[] = [
   // Rithvik - 85% attendance (17/20 classes present)
-  { id: '1', studentId: '1', subject: 'CIE', date: '2024-01-15', status: 'present' },
-  { id: '2', studentId: '1', subject: 'CICD', date: '2024-01-15', status: 'present' },
-  { id: '3', studentId: '1', subject: 'TOC', date: '2024-01-15', status: 'present' },
-  { id: '4', studentId: '1', subject: 'Certificate Course', date: '2024-01-15', status: 'present' },
-  { id: '5', studentId: '1', subject: 'CIE', date: '2024-01-16', status: 'present' },
-  { id: '6', studentId: '1', subject: 'CICD', date: '2024-01-16', status: 'absent' },
-  { id: '7', studentId: '1', subject: 'TOC', date: '2024-01-16', status: 'present' },
-  { id: '8', studentId: '1', subject: 'Certificate Course', date: '2024-01-16', status: 'present' },
-  { id: '9', studentId: '1', subject: 'CIE', date: '2024-01-17', status: 'present' },
-  { id: '10', studentId: '1', subject: 'CICD', date: '2024-01-17', status: 'present' },
-  { id: '11', studentId: '1', subject: 'TOC', date: '2024-01-17', status: 'present' },
-  { id: '12', studentId: '1', subject: 'Certificate Course', date: '2024-01-17', status: 'present' },
-  { id: '13', studentId: '1', subject: 'CIE', date: '2024-01-18', status: 'present' },
-  { id: '14', studentId: '1', subject: 'CICD', date: '2024-01-18', status: 'present' },
-  { id: '15', studentId: '1', subject: 'TOC', date: '2024-01-18', status: 'absent' },
-  { id: '16', studentId: '1', subject: 'Certificate Course', date: '2024-01-18', status: 'present' },
-  { id: '17', studentId: '1', subject: 'CIE', date: '2024-01-19', status: 'present' },
-  { id: '18', studentId: '1', subject: 'CICD', date: '2024-01-19', status: 'present' },
-  { id: '19', studentId: '1', subject: 'TOC', date: '2024-01-19', status: 'present' },
-  { id: '20', studentId: '1', subject: 'Certificate Course', date: '2024-01-19', status: 'absent' },
+  { id: '1', studentId: '1', subject: 'CIE', date: '2025-09-02', status: 'present' },
+  { id: '2', studentId: '1', subject: 'CICD', date: '2025-09-02', status: 'present' },
+  { id: '3', studentId: '1', subject: 'TOC', date: '2025-09-02', status: 'present' },
+  { id: '4', studentId: '1', subject: 'Certificate Course', date: '2025-09-02', status: 'present' },
+  { id: '5', studentId: '1', subject: 'CIE', date: '2025-09-03', status: 'present' },
+  { id: '6', studentId: '1', subject: 'CICD', date: '2025-09-03', status: 'absent' },
+  { id: '7', studentId: '1', subject: 'TOC', date: '2025-09-03', status: 'present' },
+  { id: '8', studentId: '1', subject: 'Certificate Course', date: '2025-09-03', status: 'present' },
+  { id: '9', studentId: '1', subject: 'CIE', date: '2025-09-04', status: 'present' },
+  { id: '10', studentId: '1', subject: 'CICD', date: '2025-09-04', status: 'present' },
+  { id: '11', studentId: '1', subject: 'TOC', date: '2025-09-04', status: 'present' },
+  { id: '12', studentId: '1', subject: 'Certificate Course', date: '2025-09-04', status: 'present' },
+  { id: '13', studentId: '1', subject: 'CIE', date: '2025-09-05', status: 'present' },
+  { id: '14', studentId: '1', subject: 'CICD', date: '2025-09-05', status: 'present' },
+  { id: '15', studentId: '1', subject: 'TOC', date: '2025-09-05', status: 'absent' },
+  { id: '16', studentId: '1', subject: 'Certificate Course', date: '2025-09-05', status: 'present' },
+  { id: '17', studentId: '1', subject: 'CIE', date: '2025-09-06', status: 'present' },
+  { id: '18', studentId: '1', subject: 'CICD', date: '2025-09-06', status: 'present' },
+  { id: '19', studentId: '1', subject: 'TOC', date: '2025-09-06', status: 'present' },
+  { id: '20', studentId: '1', subject: 'Certificate Course', date: '2025-09-06', status: 'absent' },
 
   // Jeethu - 100% attendance (20/20 classes present)
-  { id: '21', studentId: '2', subject: 'CIE', date: '2024-01-15', status: 'present' },
-  { id: '22', studentId: '2', subject: 'CICD', date: '2024-01-15', status: 'present' },
-  { id: '23', studentId: '2', subject: 'TOC', date: '2024-01-15', status: 'present' },
-  { id: '24', studentId: '2', subject: 'Certificate Course', date: '2024-01-15', status: 'present' },
-  { id: '25', studentId: '2', subject: 'CIE', date: '2024-01-16', status: 'present' },
-  { id: '26', studentId: '2', subject: 'CICD', date: '2024-01-16', status: 'present' },
-  { id: '27', studentId: '2', subject: 'TOC', date: '2024-01-16', status: 'present' },
-  { id: '28', studentId: '2', subject: 'Certificate Course', date: '2024-01-16', status: 'present' },
-  { id: '29', studentId: '2', subject: 'CIE', date: '2024-01-17', status: 'present' },
-  { id: '30', studentId: '2', subject: 'CICD', date: '2024-01-17', status: 'present' },
-  { id: '31', studentId: '2', subject: 'TOC', date: '2024-01-17', status: 'present' },
-  { id: '32', studentId: '2', subject: 'Certificate Course', date: '2024-01-17', status: 'present' },
-  { id: '33', studentId: '2', subject: 'CIE', date: '2024-01-18', status: 'present' },
-  { id: '34', studentId: '2', subject: 'CICD', date: '2024-01-18', status: 'present' },
-  { id: '35', studentId: '2', subject: 'TOC', date: '2024-01-18', status: 'present' },
-  { id: '36', studentId: '2', subject: 'Certificate Course', date: '2024-01-18', status: 'present' },
-  { id: '37', studentId: '2', subject: 'CIE', date: '2024-01-19', status: 'present' },
-  { id: '38', studentId: '2', subject: 'CICD', date: '2024-01-19', status: 'present' },
-  { id: '39', studentId: '2', subject: 'TOC', date: '2024-01-19', status: 'present' },
-  { id: '40', studentId: '2', subject: 'Certificate Course', date: '2024-01-19', status: 'present' },
+  { id: '21', studentId: '2', subject: 'CIE', date: '2025-09-02', status: 'present' },
+  { id: '22', studentId: '2', subject: 'CICD', date: '2025-09-02', status: 'present' },
+  { id: '23', studentId: '2', subject: 'TOC', date: '2025-09-02', status: 'present' },
+  { id: '24', studentId: '2', subject: 'Certificate Course', date: '2025-09-02', status: 'present' },
+  { id: '25', studentId: '2', subject: 'CIE', date: '2025-09-03', status: 'present' },
+  { id: '26', studentId: '2', subject: 'CICD', date: '2025-09-03', status: 'present' },
+  { id: '27', studentId: '2', subject: 'TOC', date: '2025-09-03', status: 'present' },
+  { id: '28', studentId: '2', subject: 'Certificate Course', date: '2025-09-03', status: 'present' },
+  { id: '29', studentId: '2', subject: 'CIE', date: '2025-09-04', status: 'present' },
+  { id: '30', studentId: '2', subject: 'CICD', date: '2025-09-04', status: 'present' },
+  { id: '31', studentId: '2', subject: 'TOC', date: '2025-09-04', status: 'present' },
+  { id: '32', studentId: '2', subject: 'Certificate Course', date: '2025-09-04', status: 'present' },
+  { id: '33', studentId: '2', subject: 'CIE', date: '2025-09-05', status: 'present' },
+  { id: '34', studentId: '2', subject: 'CICD', date: '2025-09-05', status: 'present' },
+  { id: '35', studentId: '2', subject: 'TOC', date: '2025-09-05', status: 'present' },
+  { id: '36', studentId: '2', subject: 'Certificate Course', date: '2025-09-05', status: 'present' },
+  { id: '37', studentId: '2', subject: 'CIE', date: '2025-09-06', status: 'present' },
+  { id: '38', studentId: '2', subject: 'CICD', date: '2025-09-06', status: 'present' },
+  { id: '39', studentId: '2', subject: 'TOC', date: '2025-09-06', status: 'present' },
+  { id: '40', studentId: '2', subject: 'Certificate Course', date: '2025-09-06', status: 'present' },
 
   // Pardhav - 60% attendance (12/20 classes present)
-  { id: '41', studentId: '3', subject: 'CIE', date: '2024-01-15', status: 'present' },
-  { id: '42', studentId: '3', subject: 'CICD', date: '2024-01-15', status: 'absent' },
-  { id: '43', studentId: '3', subject: 'TOC', date: '2024-01-15', status: 'present' },
-  { id: '44', studentId: '3', subject: 'Certificate Course', date: '2024-01-15', status: 'absent' },
-  { id: '45', studentId: '3', subject: 'CIE', date: '2024-01-16', status: 'present' },
-  { id: '46', studentId: '3', subject: 'CICD', date: '2024-01-16', status: 'present' },
-  { id: '47', studentId: '3', subject: 'TOC', date: '2024-01-16', status: 'absent' },
-  { id: '48', studentId: '3', subject: 'Certificate Course', date: '2024-01-16', status: 'absent' },
-  { id: '49', studentId: '3', subject: 'CIE', date: '2024-01-17', status: 'present' },
-  { id: '50', studentId: '3', subject: 'CICD', date: '2024-01-17', status: 'present' },
-  { id: '51', studentId: '3', subject: 'TOC', date: '2024-01-17', status: 'absent' },
-  { id: '52', studentId: '3', subject: 'Certificate Course', date: '2024-01-17', status: 'present' },
-  { id: '53', studentId: '3', subject: 'CIE', date: '2024-01-18', status: 'absent' },
-  { id: '54', studentId: '3', subject: 'CICD', date: '2024-01-18', status: 'present' },
-  { id: '55', studentId: '3', subject: 'TOC', date: '2024-01-18', status: 'present' },
-  { id: '56', studentId: '3', subject: 'Certificate Course', date: '2024-01-18', status: 'absent' },
-  { id: '57', studentId: '3', subject: 'CIE', date: '2024-01-19', status: 'present' },
-  { id: '58', studentId: '3', subject: 'CICD', date: '2024-01-19', status: 'absent' },
-  { id: '59', studentId: '3', subject: 'TOC', date: '2024-01-19', status: 'present' },
-  { id: '60', studentId: '3', subject: 'Certificate Course', date: '2024-01-19', status: 'present' },
+  { id: '41', studentId: '3', subject: 'CIE', date: '2025-09-02', status: 'present' },
+  { id: '42', studentId: '3', subject: 'CICD', date: '2025-09-02', status: 'absent' },
+  { id: '43', studentId: '3', subject: 'TOC', date: '2025-09-02', status: 'present' },
+  { id: '44', studentId: '3', subject: 'Certificate Course', date: '2025-09-02', status: 'absent' },
+  { id: '45', studentId: '3', subject: 'CIE', date: '2025-09-03', status: 'present' },
+  { id: '46', studentId: '3', subject: 'CICD', date: '2025-09-03', status: 'present' },
+  { id: '47', studentId: '3', subject: 'TOC', date: '2025-09-03', status: 'absent' },
+  { id: '48', studentId: '3', subject: 'Certificate Course', date: '2025-09-03', status: 'absent' },
+  { id: '49', studentId: '3', subject: 'CIE', date: '2025-09-04', status: 'present' },
+  { id: '50', studentId: '3', subject: 'CICD', date: '2025-09-04', status: 'present' },
+  { id: '51', studentId: '3', subject: 'TOC', date: '2025-09-04', status: 'absent' },
+  { id: '52', studentId: '3', subject: 'Certificate Course', date: '2025-09-04', status: 'present' },
+  { id: '53', studentId: '3', subject: 'CIE', date: '2025-09-05', status: 'absent' },
+  { id: '54', studentId: '3', subject: 'CICD', date: '2025-09-05', status: 'present' },
+  { id: '55', studentId: '3', subject: 'TOC', date: '2025-09-05', status: 'present' },
+  { id: '56', studentId: '3', subject: 'Certificate Course', date: '2025-09-05', status: 'absent' },
+  { id: '57', studentId: '3', subject: 'CIE', date: '2025-09-06', status: 'present' },
+  { id: '58', studentId: '3', subject: 'CICD', date: '2025-09-06', status: 'absent' },
+  { id: '59', studentId: '3', subject: 'TOC', date: '2025-09-06', status: 'present' },
+  { id: '60', studentId: '3', subject: 'Certificate Course', date: '2025-09-06', status: 'present' },
 ];
 
 const mockAssignments: Assignment[] = [
-  { id: '1', title: 'Home Assignment of CIE', subject: 'CIE', dueDate: '2024-01-25', status: 'pending' },
-  { id: '2', title: 'Home Assignment of CICD', subject: 'CICD', dueDate: '2024-01-30', status: 'pending' },
+  { id: '1', title: 'Home Assignment of CIE', subject: 'CIE', dueDate: '2025-09-15', status: 'pending' },
+  { id: '2', title: 'Home Assignment of CICD', subject: 'CICD', dueDate: '2025-09-20', status: 'pending' },
 ];
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -278,6 +282,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return gradeRecord?.grade;
   };
 
+  const addTeacher = (teacher: User) => {
+    setUsers(prev => [...prev, teacher]);
+  };
+
+  const removeTeacher = (teacherId: string) => {
+    setUsers(prev => prev.filter(u => u.id !== teacherId));
+  };
+
+  const updateTeacher = (teacherId: string, data: Partial<User>) => {
+    setUsers(prev => prev.map(user => 
+      user.id === teacherId ? { ...user, ...data } : user
+    ));
+  };
+
   const calculateCGPA = (studentId: string) => {
     const studentGrades = grades.filter(g => g.studentId === studentId);
     if (studentGrades.length === 0) return 0;
@@ -317,6 +335,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       updateStudentGrade,
       getStudentGrade,
       calculateCGPA,
+      addTeacher,
+      removeTeacher,
+      updateTeacher,
     }}>
       {children}
     </AuthContext.Provider>

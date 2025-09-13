@@ -44,6 +44,15 @@ const teacherAdminMenuItems = [
   { title: "Grade Management", url: "/grade-management", icon: GraduationCap },
 ];
 
+const adminMenuItems = [
+  { title: "Dashboard", url: "/dashboard", icon: LayoutDashboard },
+  { title: "Students", url: "/students", icon: Users },
+  { title: "Teachers", url: "/teachers", icon: UserCheck },
+  { title: "Subjects", url: "/subjects", icon: BookOpen },
+  { title: "Attendance Management", url: "/attendance-management", icon: UserCheck },
+  { title: "Grade Management", url: "/grade-management", icon: GraduationCap },
+];
+
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, logout } = useAuth();
@@ -56,7 +65,11 @@ export function AppSidebar() {
   const getNavCls = ({ isActive }: { isActive: boolean }) =>
     isActive ? "bg-primary/10 text-primary font-medium border-r-2 border-primary" : "hover:bg-accent";
 
-  const menuItems = user?.role === 'student' ? studentMenuItems : teacherAdminMenuItems;
+  const menuItems = user?.role === 'student' 
+    ? studentMenuItems 
+    : user?.role === 'admin' 
+    ? adminMenuItems 
+    : teacherAdminMenuItems;
 
   return (
     <Sidebar className={collapsed ? "w-14" : "w-64"} collapsible="icon">
