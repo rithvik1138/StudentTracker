@@ -343,7 +343,34 @@ export const AuthProvider = ({ children }) => {
   };
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <AuthContext.Provider value={{
+        user: null,
+        login,
+        logout,
+        users: [],
+        subjects: [],
+        grades: [],
+        attendance: [],
+        assignments: [],
+        addAttendance,
+        updateAttendance,
+        addSubjectToStudent,
+        removeSubjectFromStudent,
+        addSubject,
+        removeSubject,
+        addStudent,
+        removeStudent,
+        updateStudentGrade,
+        getStudentGrade,
+        calculateCGPA,
+        addTeacher,
+        removeTeacher,
+        updateTeacher,
+      }}>
+        <div>Loading...</div>
+      </AuthContext.Provider>
+    );
   }
 
   return (
