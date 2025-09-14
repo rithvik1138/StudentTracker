@@ -74,9 +74,11 @@ export const AuthProvider = ({ children }) => {
   const addAttendance = async (record) => {
     try {
       const newRecord = {
-        ...record,
         id: crypto.randomUUID(),
         student_id: record.studentId,
+        subject: record.subject,
+        date: record.date,
+        status: record.status,
         created_at: new Date().toISOString()
       };
       

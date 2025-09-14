@@ -46,7 +46,7 @@ const Attendance = () => {
   };
 
   const getStudentAttendance = (studentId) => {
-    const studentAttendance = attendance.filter(a => a.studentId === studentId);
+    const studentAttendance = attendance.filter(a => a.student_id === studentId);
     const totalClasses = studentAttendance.length;
     const presentClasses = studentAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
     const percentage = totalClasses > 0 ? (presentClasses / totalClasses * 100).toFixed(1) : '0';
@@ -59,7 +59,7 @@ const Attendance = () => {
   };
 
   const getSubjectAttendance = (studentId, subjectName) => {
-    const subjectAttendance = attendance.filter(a => a.studentId === studentId && a.subject === subjectName);
+    const subjectAttendance = attendance.filter(a => a.student_id === studentId && a.subject === subjectName);
     const totalClasses = subjectAttendance.length;
     const presentClasses = subjectAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
     const percentage = totalClasses > 0 ? (presentClasses / totalClasses * 100).toFixed(1) : '0';
@@ -180,7 +180,7 @@ const Attendance = () => {
             <CardContent>
               <div className="space-y-3">
                 {attendance
-                  .filter(a => a.studentId === user?.id)
+                  .filter(a => a.student_id === user?.id)
                   .slice(-10)
                   .reverse()
                   .map((record) => (
