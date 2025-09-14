@@ -14,7 +14,182 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      app_users: {
+        Row: {
+          cgpa: number | null
+          created_at: string
+          email: string
+          id: string
+          name: string
+          password_hash: string
+          role: string
+          updated_at: string
+        }
+        Insert: {
+          cgpa?: number | null
+          created_at?: string
+          email: string
+          id?: string
+          name: string
+          password_hash: string
+          role: string
+          updated_at?: string
+        }
+        Update: {
+          cgpa?: number | null
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          password_hash?: string
+          role?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      assignments: {
+        Row: {
+          created_at: string
+          due_date: string
+          id: string
+          status: string
+          subject: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          due_date: string
+          id?: string
+          status?: string
+          subject: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string
+          id?: string
+          status?: string
+          subject?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      attendance: {
+        Row: {
+          created_at: string
+          date: string
+          id: string
+          status: string
+          student_id: string
+          subject: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          date: string
+          id?: string
+          status: string
+          student_id: string
+          subject: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          date?: string
+          id?: string
+          status?: string
+          student_id?: string
+          subject?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendance_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      grades: {
+        Row: {
+          created_at: string
+          grade: number
+          id: string
+          max_marks: number
+          obtained_marks: number
+          student_id: string
+          subject_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          grade: number
+          id?: string
+          max_marks?: number
+          obtained_marks: number
+          student_id: string
+          subject_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          grade?: number
+          id?: string
+          max_marks?: number
+          obtained_marks?: number
+          student_id?: string
+          subject_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "grades_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "grades_subject_id_fkey"
+            columns: ["subject_id"]
+            isOneToOne: false
+            referencedRelation: "subjects"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subjects: {
+        Row: {
+          created_at: string
+          credits: number
+          id: string
+          name: string
+          teacher: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credits?: number
+          id?: string
+          name: string
+          teacher: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credits?: number
+          id?: string
+          name?: string
+          teacher?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
