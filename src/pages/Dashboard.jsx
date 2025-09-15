@@ -19,7 +19,7 @@ const Dashboard = () => {
   const getStudentStats = () => {
     if (user?.role !== 'student') return null;
     
-    const userAttendance = attendance.filter(a => a.studentId === user.id);
+    const userAttendance = attendance.filter(a => a.student_id === user.id);
     const presentCount = userAttendance.filter(a => a.status === 'present').length;
     const totalCount = userAttendance.length;
     const attendancePercentage = totalCount > 0 ? (presentCount / totalCount * 100).toFixed(1) : '0';
@@ -53,7 +53,7 @@ const Dashboard = () => {
   const getRecentAttendance = () => {
     if (user?.role === 'student') {
       return attendance
-        .filter(a => a.studentId === user.id)
+        .filter(a => a.student_id === user.id)
         .slice(-5)
         .reverse();
     }
@@ -197,7 +197,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-3">
               {getRecentAttendance().map((record) => {
-                const student = users.find(u => u.id === record.studentId);
+                const student = users.find(u => u.id === record.student_id);
                 return (
                   <div key={record.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
                     <div>
