@@ -241,7 +241,7 @@ export const AuthProvider = ({ children }) => {
         });
         
         // Update user CGPA
-        const newCgpa = await calculateCGPA(studentId);
+        const newCgpa = calculateCGPA(studentId);
         await supabase
           .from('app_users')
           .update({ cgpa: newCgpa })
@@ -317,7 +317,7 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const calculateCGPA = async (studentId) => {
+  const calculateCGPA = (studentId) => {
     const studentGrades = grades.filter(g => g.student_id === studentId);
     if (studentGrades.length === 0) return 0;
 

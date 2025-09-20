@@ -89,15 +89,21 @@ const Grades = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Current CGPA</span>
-                    <span className="text-2xl font-bold text-foreground">{user?.cgpa ? calculateCGPA(user.id).toFixed(2) : '0.00'}/10</span>
+                    <span className="text-2xl font-bold text-foreground">{(() => {
+                      const cgpa = calculateCGPA(user?.id || '');
+                      return typeof cgpa === 'number' ? cgpa.toFixed(2) : '0.00';
+                    })()}/10</span>
                   </div>
                   <Progress 
-                    value={getCGPAProgress(user?.cgpa ? calculateCGPA(user.id) : 0)} 
+                    value={getCGPAProgress(calculateCGPA(user?.id || ''))} 
                     className="h-2"
                   />
                   <p className="text-xs text-muted-foreground">
-                    {user?.cgpa && calculateCGPA(user.id) >= 9 ? 'Excellent Performance!' : 
-                     user?.cgpa && calculateCGPA(user.id) >= 8 ? 'Good Performance!' : 'Keep improving!'}
+                    {(() => {
+                      const cgpa = calculateCGPA(user?.id || '');
+                      return cgpa >= 9 ? 'Excellent Performance!' : 
+                             cgpa >= 8 ? 'Good Performance!' : 'Keep improving!';
+                    })()}
                   </p>
                 </div>
                 <div className="space-y-3">
@@ -117,7 +123,7 @@ const Grades = () => {
                       const studentGrades = subjects.map(s => getStudentGrade(user?.id || '', s.id)).filter(g => g !== undefined);
                       if (studentGrades.length === 0) return 'N/A';
                       const avgGrade = studentGrades.reduce((a, b) => a + b, 0) / studentGrades.length;
-                      return avgGrade.toFixed(1);
+                      return typeof avgGrade === 'number' ? avgGrade.toFixed(1) : 'N/A';
                     })()}</span>
                   </div>
                 </div>
@@ -141,7 +147,7 @@ const Grades = () => {
                       </div>
                       {studentGrade && (
                         <Badge className={getGradeColor(studentGrade)}>
-                          {studentGrade.toFixed(1)}/10
+                          {typeof studentGrade === 'number' ? studentGrade.toFixed(1) : 'N/A'}/10
                         </Badge>
                       )}
                     </div>
@@ -151,7 +157,7 @@ const Grades = () => {
                       <div className="flex justify-between text-sm">
                         <span className="text-muted-foreground">Grade Points:</span>
                         <span className="font-medium text-foreground">
-                          {studentGrade ? studentGrade.toFixed(1) : 'N/A'}
+                          {studentGrade && typeof studentGrade === 'number' ? studentGrade.toFixed(1) : 'N/A'}
                         </span>
                       </div>
                       <div className="flex justify-between text-sm">
@@ -195,16 +201,25 @@ const Grades = () => {
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-medium text-foreground">{student.name}</h4>
                       <Badge variant="outline" className="text-primary">
-                        {calculateCGPA(student.id).toFixed(2)}/10
+                        {(() => {
+                          const cgpa = calculateCGPA(student.id);
+                          return typeof cgpa === 'number' ? cgpa.toFixed(2) : '0.00';
+                        })()}/10
                       </Badge>
                     </div>
                     <Progress 
-                      value={getCGPAProgress(calculateCGPA(student.id))} 
+                      value={(() => {
+                        const cgpa = calculateCGPA(student.id);
+                        return getCGPAProgress(typeof cgpa === 'number' ? cgpa : 0);
+                      })()} 
                       className="h-2 mb-2"
                     />
                     <p className="text-xs text-muted-foreground">
-                      {calculateCGPA(student.id) >= 9 ? 'Excellent' : 
-                       calculateCGPA(student.id) >= 8 ? 'Good' : 'Average'}
+                      {(() => {
+                        const cgpa = calculateCGPA(student.id);
+                        return typeof cgpa === 'number' && cgpa >= 9 ? 'Excellent' : 
+                               typeof cgpa === 'number' && cgpa >= 8 ? 'Good' : 'Average';
+                      })()}
                     </p>
                   </div>
                 ))}
@@ -255,7 +270,7 @@ const Grades = () => {
                           >
                             <span className="text-sm font-medium text-foreground">{student.name}</span>
                             <Badge className={getGradeColor(studentGrade || 0)}>
-                              {studentGrade ? studentGrade.toFixed(1) : 'Not Graded'}
+                              {studentGrade && typeof studentGrade === 'number' ? studentGrade.toFixed(1) : 'Not Graded'}
                             </Badge>
                           </div>
                         );
