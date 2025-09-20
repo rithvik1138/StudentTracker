@@ -14,41 +14,6 @@ export const AuthProvider = ({ children }) => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Set up auth listener and load data
-  useEffect(() => {
-    // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Load user profile when logged in
-        if (session?.user) {
-          setTimeout(async () => {
-            await loadUserProfile(session.user.id);
-            await loadData();
-          }, 0);
-        } else {
-          setProfile(null);
-        }
-      }
-    );
-
-    // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
-        loadUserProfile(session.user.id);
-      }
-      loadData();
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
-
   const loadUserProfile = async (userId) => {
     try {
       const { data, error } = await supabase
@@ -89,7 +54,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = async () => {
+  // Set up auth listener and load data
+  useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Load user profile when logged in
+        if (session?.user) {
+          setTimeout(async () => {
+            await loadUserProfile(session.user.id);
+            await loadData();
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      }
+      loadData();
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signOutUser = async () => {
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
@@ -394,43 +394,43 @@ export const AuthProvider = ({ children }) => {
 
   // Legacy functions for compatibility
   const addSubjectToStudent = (studentId, subject) => {
-    // Implementation for adding subject to student
     console.log('addSubjectToStudent called', { studentId, subject });
   };
 
   const removeSubjectFromStudent = (studentId, subjectId) => {
-    // Implementation for removing subject from student
     console.log('removeSubjectFromStudent called', { studentId, subjectId });
+  };
+
+  const contextValue = {
+    user: getCurrentUser(),
+    session,
+    profile,
+    users,
+    subjects,
+    grades,
+    attendance,
+    assignments,
+    loading,
+    logout: signOutUser,
+    addAttendance,
+    updateAttendance,
+    addSubjectToStudent,
+    removeSubjectFromStudent,
+    addSubject,
+    removeSubject,
+    addStudent,
+    removeStudent,
+    updateStudentGrade,
+    getStudentGrade,
+    calculateCGPA,
+    addTeacher,
+    removeTeacher,
+    updateTeacher,
   };
 
   if (loading) {
     return (
-      <AuthContext.Provider value={{
-        user: getCurrentUser(),
-        session,
-        profile,
-        users,
-        subjects,
-        grades,
-        attendance,
-        assignments,
-        loading,
-        logout,
-        addAttendance,
-        updateAttendance,
-        addSubjectToStudent,
-        removeSubjectFromStudent,
-        addSubject,
-        removeSubject,
-        addStudent,
-        removeStudent,
-        updateStudentGrade,
-        getStudentGrade,
-        calculateCGPA,
-        addTeacher,
-        removeTeacher,
-        updateTeacher,
-      }}>
+      <AuthContext.Provider value={contextValue}>
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center">
             <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
@@ -442,32 +442,7 @@ export const AuthProvider = ({ children }) => {
   }
 
   return (
-    <AuthContext.Provider value={{
-      user: getCurrentUser(),
-      session,
-      profile,
-      users,
-      subjects,
-      grades,
-      attendance,
-      assignments,
-      loading,
-      logout,
-      addAttendance,
-      updateAttendance,
-      addSubjectToStudent,
-      removeSubjectFromStudent,
-      addSubject,
-      removeSubject,
-      addStudent,
-      removeStudent,
-      updateStudentGrade,
-      getStudentGrade,
-      calculateCGPA,
-      addTeacher,
-      removeTeacher,
-      updateTeacher,
-    }}>
+    <AuthContext.Provider value={contextValue}>
       {children}
     </AuthContext.Provider>
   );
