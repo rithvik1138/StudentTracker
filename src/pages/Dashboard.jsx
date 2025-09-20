@@ -197,7 +197,7 @@ const Dashboard = () => {
           <CardContent>
             <div className="space-y-3">
               {getRecentAttendance().map((record) => {
-                const student = users.find(u => u.id === record.student_id);
+                const student = users.find(u => u.user_id === record.student_id);
                 return (
                   <div key={record.id} className="flex items-center justify-between p-3 rounded-lg border border-border">
                     <div>

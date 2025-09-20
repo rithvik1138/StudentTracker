@@ -5,6 +5,8 @@ const AuthContext = createContext(undefined);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
+  const [profile, setProfile] = useState(null);
   const [users, setUsers] = useState([]);
   const [subjects, setSubjects] = useState([]);
   const [grades, setGrades] = useState([]);
@@ -12,30 +14,72 @@ export const AuthProvider = ({ children }) => {
   const [assignments, setAssignments] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Load data from Supabase on mount
+  // Set up auth listener and load data
   useEffect(() => {
-    loadData();
-    
-    // Check for saved user in localStorage
-    const savedUser = localStorage.getItem('studentTracker_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setSession(session);
+        setUser(session?.user ?? null);
+        
+        // Load user profile when logged in
+        if (session?.user) {
+          setTimeout(async () => {
+            await loadUserProfile(session.user.id);
+            await loadData();
+          }, 0);
+        } else {
+          setProfile(null);
+        }
+      }
+    );
+
+    // THEN check for existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        loadUserProfile(session.user.id);
+      }
+      loadData();
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error loading profile:', error);
+        return;
+      }
+
+      setProfile(data);
+    } catch (error) {
+      console.error('Error loading profile:', error);
+    }
+  };
 
   const loadData = async () => {
     try {
       // Load all data from Supabase
-      const [usersRes, subjectsRes, gradesRes, attendanceRes, assignmentsRes] = await Promise.all([
-        supabase.from('app_users').select('*'),
+      const [profilesRes, subjectsRes, gradesRes, attendanceRes, assignmentsRes] = await Promise.all([
+        supabase.from('profiles').select('*'),
         supabase.from('subjects').select('*'),
         supabase.from('grades').select('*'),
         supabase.from('attendance').select('*'),
         supabase.from('assignments').select('*')
       ]);
 
-      if (usersRes.data) setUsers(usersRes.data);
+      if (profilesRes.data) setUsers(profilesRes.data);
       if (subjectsRes.data) setSubjects(subjectsRes.data);
       if (gradesRes.data) setGrades(gradesRes.data);
       if (attendanceRes.data) setAttendance(attendanceRes.data);
@@ -45,54 +89,42 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const logout = async () => {
     try {
-      const { data, error } = await supabase
-        .from('app_users')
-        .select('*')
-        .eq('email', email)
-        .eq('password_hash', password)
-        .single();
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
       
-      if (data && !error) {
-        setUser(data);
-        localStorage.setItem('studentTracker_user', JSON.stringify(data));
-        return true;
-      }
-      return false;
+      setUser(null);
+      setSession(null);
+      setProfile(null);
     } catch (error) {
-      console.error('Login error:', error);
-      return false;
+      console.error('Error signing out:', error);
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('studentTracker_user');
-  };
-
-  const addAttendance = async (record) => {
+  const addAttendance = async (studentId, subject, status, date) => {
     try {
-      const newRecord = {
-        id: crypto.randomUUID(),
-        student_id: record.studentId,
-        subject: record.subject,
-        date: record.date,
-        status: record.status,
-        created_at: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
         .from('attendance')
-        .insert(newRecord)
+        .insert({
+          student_id: studentId,
+          subject: subject,
+          status: status,
+          date: date
+        })
         .select()
         .single();
-        
-      if (data && !error) {
-        setAttendance(prev => [...prev, data]);
+
+      if (error) {
+        console.error('Error adding attendance:', error);
+        return { success: false, error: error.message };
       }
+
+      setAttendance(prev => [...prev, data]);
+      return { success: true, data };
     } catch (error) {
       console.error('Error adding attendance:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -104,42 +136,38 @@ export const AuthProvider = ({ children }) => {
         .eq('id', id)
         .select()
         .single();
-        
-      if (data && !error) {
-        setAttendance(prev => prev.map(record => 
-          record.id === id ? data : record
-        ));
+
+      if (error) {
+        console.error('Error updating attendance:', error);
+        return { success: false, error: error.message };
       }
+
+      setAttendance(prev => prev.map(a => a.id === id ? data : a));
+      return { success: true, data };
     } catch (error) {
       console.error('Error updating attendance:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const addSubject = async (subject) => {
+  const addSubject = async (subjectData) => {
     try {
-      const newSubject = {
-        ...subject,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
         .from('subjects')
-        .insert(newSubject)
+        .insert(subjectData)
         .select()
         .single();
-        
-      if (data && !error) {
-        setSubjects(prev => [...prev, data]);
-        
-        // Initialize grades for all students for this new subject
-        const students = users.filter(u => u.role === 'student');
-        for (const student of students) {
-          await updateStudentGrade(student.id, data.id, 0, 10);
-        }
+
+      if (error) {
+        console.error('Error adding subject:', error);
+        return { success: false, error: error.message };
       }
+
+      setSubjects(prev => [...prev, data]);
+      return { success: true, data };
     } catch (error) {
       console.error('Error adding subject:', error);
+      return { success: false, error: error.message };
     }
   };
 
@@ -149,67 +177,67 @@ export const AuthProvider = ({ children }) => {
         .from('subjects')
         .delete()
         .eq('id', subjectId);
-        
-      if (!error) {
-        setSubjects(prev => prev.filter(s => s.id !== subjectId));
-        setGrades(prev => prev.filter(g => g.subject_id !== subjectId));
-        setAttendance(prev => prev.filter(a => a.subject_id !== subjectId));
+
+      if (error) {
+        console.error('Error removing subject:', error);
+        return { success: false, error: error.message };
       }
+
+      setSubjects(prev => prev.filter(s => s.id !== subjectId));
+      return { success: true };
     } catch (error) {
       console.error('Error removing subject:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const addStudent = async (student) => {
+  const addStudent = async (studentData) => {
     try {
-      const newStudent = {
-        ...student,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
-        .from('app_users')
-        .insert(newStudent)
+        .from('profiles')
+        .insert({
+          name: studentData.name,
+          user_id: studentData.user_id || studentData.id,
+          role: 'student'
+        })
         .select()
         .single();
-        
-      if (data && !error) {
-        setUsers(prev => [...prev, data]);
+
+      if (error) {
+        console.error('Error adding student:', error);
+        return { success: false, error: error.message };
       }
+
+      setUsers(prev => [...prev, data]);
+      return { success: true, data };
     } catch (error) {
       console.error('Error adding student:', error);
+      return { success: false, error: error.message };
     }
   };
 
   const removeStudent = async (studentId) => {
     try {
       const { error } = await supabase
-        .from('app_users')
+        .from('profiles')
         .delete()
         .eq('id', studentId);
-        
-      if (!error) {
-        setUsers(prev => prev.filter(u => u.id !== studentId));
-        setAttendance(prev => prev.filter(a => a.student_id !== studentId));
-        setGrades(prev => prev.filter(g => g.student_id !== studentId));
+
+      if (error) {
+        console.error('Error removing student:', error);
+        return { success: false, error: error.message };
       }
+
+      setUsers(prev => prev.filter(u => u.id !== studentId));
+      return { success: true };
     } catch (error) {
       console.error('Error removing student:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const updateStudentGrade = async (studentId, subjectId, grade, maxMarks = 10) => {
+  const updateStudentGrade = async (studentId, subjectId, grade) => {
     try {
-      const gradeData = {
-        student_id: studentId,
-        subject_id: subjectId,
-        grade: parseFloat(grade),
-        obtained_marks: parseFloat(grade),
-        max_marks: parseFloat(maxMarks)
-      };
-
-      // Try to update existing grade first
       const { data: existingGrade } = await supabase
         .from('grades')
         .select('*')
@@ -221,7 +249,11 @@ export const AuthProvider = ({ children }) => {
       if (existingGrade) {
         result = await supabase
           .from('grades')
-          .update(gradeData)
+          .update({ 
+            grade: parseFloat(grade),
+            obtained_marks: parseFloat(grade),
+            updated_at: new Date().toISOString()
+          })
           .eq('student_id', studentId)
           .eq('subject_id', subjectId)
           .select()
@@ -229,7 +261,13 @@ export const AuthProvider = ({ children }) => {
       } else {
         result = await supabase
           .from('grades')
-          .insert({ ...gradeData, id: crypto.randomUUID() })
+          .insert({
+            student_id: studentId,
+            subject_id: subjectId,
+            grade: parseFloat(grade),
+            obtained_marks: parseFloat(grade),
+            max_marks: 10
+          })
           .select()
           .single();
       }
@@ -239,86 +277,86 @@ export const AuthProvider = ({ children }) => {
           const filtered = prev.filter(g => !(g.student_id === studentId && g.subject_id === subjectId));
           return [...filtered, result.data];
         });
-        
-        // Update user CGPA
-        const newCgpa = calculateCGPA(studentId);
-        await supabase
-          .from('app_users')
-          .update({ cgpa: newCgpa })
-          .eq('id', studentId);
-          
-        setUsers(prev => prev.map(user => 
-          user.id === studentId ? { ...user, cgpa: newCgpa } : user
-        ));
       }
+
+      return result;
     } catch (error) {
-      console.error('Error updating student grade:', error);
+      console.error('Error updating grade:', error);
+      return { error: error.message };
     }
   };
 
-  const getStudentGrade = (studentId, subjectId) => {
-    const gradeRecord = grades.find(g => g.student_id === studentId && g.subject_id === subjectId);
-    return gradeRecord?.grade;
-  };
-
-  const addTeacher = async (teacher) => {
+  const addTeacher = async (teacherData) => {
     try {
-      const newTeacher = {
-        ...teacher,
-        id: crypto.randomUUID(),
-        created_at: new Date().toISOString()
-      };
-      
       const { data, error } = await supabase
-        .from('app_users')
-        .insert(newTeacher)
+        .from('profiles')
+        .insert({
+          name: teacherData.name,
+          user_id: teacherData.user_id || teacherData.id,
+          role: 'teacher'
+        })
         .select()
         .single();
-        
-      if (data && !error) {
-        setUsers(prev => [...prev, data]);
+
+      if (error) {
+        console.error('Error adding teacher:', error);
+        return { success: false, error: error.message };
       }
+
+      setUsers(prev => [...prev, data]);
+      return { success: true, data };
     } catch (error) {
       console.error('Error adding teacher:', error);
+      return { success: false, error: error.message };
     }
   };
 
   const removeTeacher = async (teacherId) => {
     try {
       const { error } = await supabase
-        .from('app_users')
+        .from('profiles')
         .delete()
         .eq('id', teacherId);
-        
-      if (!error) {
-        setUsers(prev => prev.filter(u => u.id !== teacherId));
+
+      if (error) {
+        console.error('Error removing teacher:', error);
+        return { success: false, error: error.message };
       }
+
+      setUsers(prev => prev.filter(u => u.id !== teacherId));
+      return { success: true };
     } catch (error) {
       console.error('Error removing teacher:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const updateTeacher = async (teacherId, data) => {
+  const updateTeacher = async (teacherId, updatedData) => {
     try {
-      const { data: updatedData, error } = await supabase
-        .from('app_users')
-        .update(data)
+      const { data, error } = await supabase
+        .from('profiles')
+        .update(updatedData)
         .eq('id', teacherId)
         .select()
         .single();
-        
-      if (updatedData && !error) {
-        setUsers(prev => prev.map(user => 
-          user.id === teacherId ? updatedData : user
-        ));
+
+      if (error) {
+        console.error('Error updating teacher:', error);
+        return { success: false, error: error.message };
       }
+
+      setUsers(prev => prev.map(user => 
+        user.id === teacherId ? data : user
+      ));
+      return { success: true, data };
     } catch (error) {
       console.error('Error updating teacher:', error);
+      return { success: false, error: error.message };
     }
   };
 
-  const calculateCGPA = (studentId) => {
-    const studentGrades = grades.filter(g => g.student_id === studentId);
+  const calculateCGPA = (studentUserId) => {
+    const studentGrades = grades.filter(g => g.student_id === studentUserId);
     if (studentGrades.length === 0) return 0;
 
     let totalWeightedGrades = 0;
@@ -335,26 +373,49 @@ export const AuthProvider = ({ children }) => {
     return totalCredits > 0 ? parseFloat((totalWeightedGrades / totalCredits).toFixed(2)) : 0;
   };
 
+  const getStudentGrade = (studentUserId, subjectId) => {
+    const gradeRecord = grades.find(g => g.student_id === studentUserId && g.subject_id === subjectId);
+    return gradeRecord ? gradeRecord.grade : undefined;
+  };
+
+  // Get current user with profile data
+  const getCurrentUser = () => {
+    if (!user || !profile) return null;
+    return {
+      id: user.id,
+      email: user.email,
+      name: profile.name,
+      role: profile.role,
+      user_id: user.id,
+      profile_id: profile.id,
+      ...profile
+    };
+  };
+
   // Legacy functions for compatibility
   const addSubjectToStudent = (studentId, subject) => {
     // Implementation for adding subject to student
+    console.log('addSubjectToStudent called', { studentId, subject });
   };
 
   const removeSubjectFromStudent = (studentId, subjectId) => {
     // Implementation for removing subject from student
+    console.log('removeSubjectFromStudent called', { studentId, subjectId });
   };
 
   if (loading) {
     return (
       <AuthContext.Provider value={{
-        user: null,
-        login,
+        user: getCurrentUser(),
+        session,
+        profile,
+        users,
+        subjects,
+        grades,
+        attendance,
+        assignments,
+        loading,
         logout,
-        users: [],
-        subjects: [],
-        grades: [],
-        attendance: [],
-        assignments: [],
         addAttendance,
         updateAttendance,
         addSubjectToStudent,
@@ -370,21 +431,28 @@ export const AuthProvider = ({ children }) => {
         removeTeacher,
         updateTeacher,
       }}>
-        <div>Loading...</div>
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
       </AuthContext.Provider>
     );
   }
 
   return (
     <AuthContext.Provider value={{
-      user,
-      login,
-      logout,
+      user: getCurrentUser(),
+      session,
+      profile,
       users,
       subjects,
       grades,
       attendance,
       assignments,
+      loading,
+      logout,
       addAttendance,
       updateAttendance,
       addSubjectToStudent,
