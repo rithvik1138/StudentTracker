@@ -102,6 +102,115 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Migration function to move old users to new auth system
+  const migrateOldUser = async (oldUser) => {
+    try {
+      // Create new Supabase auth user
+      const { data: authData, error: signUpError } = await supabase.auth.signUp({
+        email: oldUser.email,
+        password: oldUser.password_hash, // Using the stored password as the new password
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name: oldUser.name,
+            role: oldUser.role
+          }
+        }
+      });
+
+      if (signUpError) {
+        console.error('Error creating new auth user:', signUpError);
+        return { success: false, error: signUpError.message };
+      }
+
+      // The profile will be created automatically by the trigger
+      return { success: true, user: authData.user };
+    } catch (error) {
+      console.error('Error migrating user:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
+  // Enhanced login function that handles both old and new users
+  const loginUser = async (email, password) => {
+    try {
+      // First try Supabase auth login
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password
+      });
+
+      if (!error && data.user) {
+        return { success: true, user: data.user };
+      }
+
+      // If Supabase auth fails, check old app_users table
+      const { data: oldUsers, error: queryError } = await supabase
+        .from('app_users')
+        .select('*')
+        .eq('email', email)
+        .eq('password_hash', password);
+
+      if (queryError) {
+        console.error('Error checking old users:', queryError);
+        return { success: false, error: 'Login failed' };
+      }
+
+      if (oldUsers && oldUsers.length > 0) {
+        const oldUser = oldUsers[0];
+        
+        // Migrate the old user to new system
+        const migrationResult = await migrateOldUser(oldUser);
+        
+        if (migrationResult.success) {
+          // Now try to sign in with the new account
+          const { data: newAuthData, error: newSignInError } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+
+          if (!newSignInError && newAuthData.user) {
+            return { success: true, user: newAuthData.user, migrated: true };
+          }
+        }
+        
+        return { success: false, error: 'Migration failed. Please try again.' };
+      }
+
+      // Neither old nor new system has this user
+      return { success: false, error: error?.message || 'Invalid credentials' };
+    } catch (error) {
+      console.error('Error during login:', error);
+      return { success: false, error: 'Login failed' };
+    }
+  };
+
+  // Sign up function
+  const signUpUser = async (email, password, name, role = 'student') => {
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`,
+          data: {
+            name,
+            role
+          }
+        }
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+
+      return { success: true, user: data.user };
+    } catch (error) {
+      console.error('Error signing up:', error);
+      return { success: false, error: error.message };
+    }
+  };
+
   const addAttendance = async (studentId, subject, status, date) => {
     try {
       const { data, error } = await supabase
@@ -411,6 +520,8 @@ export const AuthProvider = ({ children }) => {
     attendance,
     assignments,
     loading,
+    login: loginUser,
+    signUp: signUpUser,
     logout: signOutUser,
     addAttendance,
     updateAttendance,

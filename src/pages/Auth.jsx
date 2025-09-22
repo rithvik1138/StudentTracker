@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,6 +13,7 @@ import { toast } from 'sonner';
 
 const Auth = () => {
   const navigate = useNavigate();
+  const { login, signUp } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -37,18 +38,21 @@ const Auth = () => {
     setError('');
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: loginData.email,
-        password: loginData.password,
-      });
+      const result = await login(loginData.email, loginData.password);
 
-      if (error) throw error;
-
-      toast.success('Logged in successfully!');
-      navigate('/');
+      if (result.success) {
+        if (result.migrated) {
+          toast.success('Account migrated successfully! Welcome back!');
+        } else {
+          toast.success('Logged in successfully!');
+        }
+        navigate('/');
+      } else {
+        setError(result.error);
+      }
     } catch (error) {
       console.error('Login error:', error);
-      setError(error.message);
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
@@ -73,35 +77,28 @@ const Auth = () => {
     }
 
     try {
-      const redirectUrl = `${window.location.origin}/`;
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: signupData.email,
-        password: signupData.password,
-        options: {
-          emailRedirectTo: redirectUrl,
-          data: {
-            name: signupData.name,
-            role: signupData.role
-          }
-        }
-      });
+      const result = await signUp(signupData.email, signupData.password, signupData.name, signupData.role);
 
-      if (error) throw error;
-
-      if (data.user && !data.user.email_confirmed_at) {
-        toast.success('Please check your email to confirm your account!');
+      if (result.success) {
+        toast.success('Account created successfully! Please check your email to verify your account.');
+        // Clear form
+        setSignupData({
+          name: '',
+          email: '',
+          password: '',
+          confirmPassword: '',
+          role: 'student'
+        });
       } else {
-        toast.success('Account created successfully!');
-        navigate('/');
+        if (result.error.includes('User already registered')) {
+          setError('An account with this email already exists. Please try logging in instead.');
+        } else {
+          setError(result.error);
+        }
       }
     } catch (error) {
       console.error('Signup error:', error);
-      if (error.message.includes('User already registered')) {
-        setError('An account with this email already exists. Please try logging in instead.');
-      } else {
-        setError(error.message);
-      }
+      setError('An unexpected error occurred');
     } finally {
       setLoading(false);
     }
