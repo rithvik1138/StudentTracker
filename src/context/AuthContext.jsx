@@ -56,27 +56,6 @@ export const AuthProvider = ({ children }) => {
 
   // Set up auth listener and load data
   useEffect(() => {
-    // Check for legacy user session first
-    const legacyUserData = localStorage.getItem('legacyUser');
-    if (legacyUserData) {
-      try {
-        const legacyUser = JSON.parse(legacyUserData);
-        setUser(legacyUser);
-        setProfile({
-          id: legacyUser.id,
-          user_id: legacyUser.id,
-          name: legacyUser.name,
-          role: legacyUser.role
-        });
-        loadData();
-        setLoading(false);
-        return;
-      } catch (error) {
-        console.error('Error parsing legacy user data:', error);
-        localStorage.removeItem('legacyUser');
-      }
-    }
-
     // Set up auth state listener FIRST
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
@@ -112,9 +91,6 @@ export const AuthProvider = ({ children }) => {
 
   const signOutUser = async () => {
     try {
-      // Clear legacy user session
-      localStorage.removeItem('legacyUser');
-      
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       
@@ -123,122 +99,6 @@ export const AuthProvider = ({ children }) => {
       setProfile(null);
     } catch (error) {
       console.error('Error signing out:', error);
-    }
-  };
-
-  // Migration function to move old users to new auth system
-  const migrateOldUser = async (oldUser) => {
-    try {
-      // Create new Supabase auth user
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: oldUser.email,
-        password: oldUser.password_hash, // Using the stored password as the new password
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name: oldUser.name,
-            role: oldUser.role
-          }
-        }
-      });
-
-      if (signUpError) {
-        console.error('Error creating new auth user:', signUpError);
-        return { success: false, error: signUpError.message };
-      }
-
-      // The profile will be created automatically by the trigger
-      return { success: true, user: authData.user };
-    } catch (error) {
-      console.error('Error migrating user:', error);
-      return { success: false, error: error.message };
-    }
-  };
-
-  // Enhanced login function that handles both old and new users
-  const loginUser = async (email, password) => {
-    try {
-      // First try Supabase auth login
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password
-      });
-
-      if (!error && data.user) {
-        return { success: true, user: data.user };
-      }
-
-      // If Supabase auth fails, check old app_users table
-      const { data: oldUsers, error: queryError } = await supabase
-        .from('app_users')
-        .select('*')
-        .eq('email', email)
-        .eq('password_hash', password);
-
-      if (queryError) {
-        console.error('Error checking old users:', queryError);
-        return { success: false, error: 'Login failed' };
-      }
-
-      if (oldUsers && oldUsers.length > 0) {
-        const oldUser = oldUsers[0];
-        
-        // Create a session-like object for old users
-        const legacyUser = {
-          id: oldUser.id,
-          email: oldUser.email,
-          name: oldUser.name,
-          role: oldUser.role,
-          cgpa: oldUser.cgpa,
-          isLegacyUser: true
-        };
-
-        // Store in localStorage for session persistence
-        localStorage.setItem('legacyUser', JSON.stringify(legacyUser));
-        
-        // Set the user state directly
-        setUser(legacyUser);
-        setProfile({
-          id: oldUser.id,
-          user_id: oldUser.id, 
-          name: oldUser.name,
-          role: oldUser.role
-        });
-        
-        return { success: true, user: legacyUser, isLegacyUser: true };
-      }
-
-      // Neither old nor new system has this user
-      return { success: false, error: error?.message || 'Invalid credentials' };
-    } catch (error) {
-      console.error('Error during login:', error);
-      return { success: false, error: 'Login failed' };
-    }
-  };
-
-  // Sign up function
-  const signUpUser = async (email, password, name, role = 'student') => {
-    try {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: `${window.location.origin}/`,
-          data: {
-            name,
-            role
-          }
-        }
-      });
-
-      if (error) {
-        return { success: false, error: error.message };
-      }
-
-      return { success: true, user: data.user };
-    } catch (error) {
-      console.error('Error signing up:', error);
-      return { success: false, error: error.message };
     }
   };
 
@@ -520,24 +380,7 @@ export const AuthProvider = ({ children }) => {
 
   // Get current user with profile data
   const getCurrentUser = () => {
-    if (!user) return null;
-    
-    // Handle legacy users
-    if (user.isLegacyUser) {
-      return {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        user_id: user.id,
-        profile_id: user.id,
-        isLegacyUser: true,
-        ...user
-      };
-    }
-    
-    // Handle new Supabase auth users
-    if (!profile) return null;
+    if (!user || !profile) return null;
     return {
       id: user.id,
       email: user.email,
@@ -568,8 +411,6 @@ export const AuthProvider = ({ children }) => {
     attendance,
     assignments,
     loading,
-    login: loginUser,
-    signUp: signUpUser,
     logout: signOutUser,
     addAttendance,
     updateAttendance,
