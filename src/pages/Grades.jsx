@@ -202,21 +202,21 @@ const Grades = () => {
                       <h4 className="font-medium text-foreground">{student.name}</h4>
                       <Badge variant="outline" className="text-primary">
                         {(() => {
-                          const cgpa = calculateCGPA(student.user_id);
+                          const cgpa = calculateCGPA(student.id);
                           return typeof cgpa === 'number' ? cgpa.toFixed(2) : '0.00';
                         })()}/10
                       </Badge>
                     </div>
                     <Progress 
                       value={(() => {
-                        const cgpa = calculateCGPA(student.user_id);
+                        const cgpa = calculateCGPA(student.id);
                         return getCGPAProgress(typeof cgpa === 'number' ? cgpa : 0);
                       })()} 
                       className="h-2 mb-2"
                     />
                     <p className="text-xs text-muted-foreground">
                       {(() => {
-                        const cgpa = calculateCGPA(student.user_id);
+                        const cgpa = calculateCGPA(student.id);
                         return typeof cgpa === 'number' && cgpa >= 9 ? 'Excellent' : 
                                typeof cgpa === 'number' && cgpa >= 8 ? 'Good' : 'Average';
                       })()}
@@ -251,7 +251,7 @@ const Grades = () => {
                           // For now, just edit the first student's grade as an example
                           const firstStudent = students[0];
                           if (firstStudent) {
-                            openGradeDialog(firstStudent.user_id, subject.id, firstStudent.name, subject.name);
+                            openGradeDialog(firstStudent.id, subject.id, firstStudent.name, subject.name);
                           }
                         }}
                       >
@@ -262,11 +262,11 @@ const Grades = () => {
                     
                     <div className="grid gap-3 md:grid-cols-3">
                       {students.map((student) => {
-                        const studentGrade = getStudentGrade(student.user_id, subject.id);
+                        const studentGrade = getStudentGrade(student.id, subject.id);
                         return (
                           <div key={student.id} 
                                className="flex items-center justify-between p-2 bg-muted/50 rounded cursor-pointer hover:bg-muted/70 transition-colors"
-                             onClick={() => openGradeDialog(student.user_id, subject.id, student.name, subject.name)}
+                             onClick={() => openGradeDialog(student.id, subject.id, student.name, subject.name)}
                           >
                             <span className="text-sm font-medium text-foreground">{student.name}</span>
                             <Badge className={getGradeColor(studentGrade || 0)}>
