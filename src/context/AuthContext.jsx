@@ -524,7 +524,11 @@ export const AuthProvider = ({ children }) => {
   };
 
   const calculateCGPA = (studentUserId) => {
+    console.log('calculateCGPA called with:', studentUserId);
+    console.log('Available grades:', grades.length);
     const studentGrades = grades.filter(g => g.student_id === studentUserId);
+    console.log('Student grades found:', studentGrades.length, studentGrades);
+    
     if (studentGrades.length === 0) return 0;
 
     let totalWeightedGrades = 0;
@@ -552,7 +556,7 @@ export const AuthProvider = ({ children }) => {
     
     // Handle legacy users
     if (user.isLegacyUser) {
-      return {
+      const currentUser = {
         id: user.id,
         email: user.email,
         name: user.name,
@@ -562,11 +566,13 @@ export const AuthProvider = ({ children }) => {
         isLegacyUser: true,
         ...user
       };
+      console.log('getCurrentUser (legacy):', currentUser);
+      return currentUser;
     }
     
     // Handle new Supabase auth users
     if (!profile) return null;
-    return {
+    const currentUser = {
       id: user.id,
       email: user.email,
       name: profile.name,
@@ -575,6 +581,8 @@ export const AuthProvider = ({ children }) => {
       profile_id: profile.id,
       ...profile
     };
+    console.log('getCurrentUser (new):', currentUser);
+    return currentUser;
   };
 
   // Legacy functions for compatibility

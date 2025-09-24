@@ -46,10 +46,16 @@ const Attendance = () => {
   };
 
   const getStudentAttendance = (studentId) => {
+    console.log('getStudentAttendance called with:', studentId);
+    console.log('Available attendance records:', attendance.length);
     const studentAttendance = attendance.filter(a => a.student_id === studentId);
+    console.log('Student attendance found:', studentAttendance.length, studentAttendance.slice(0, 3));
+    
     const totalClasses = studentAttendance.length;
     const presentClasses = studentAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
     const percentage = totalClasses > 0 ? (presentClasses / totalClasses * 100).toFixed(1) : '0';
+    
+    console.log('Attendance calculation:', { totalClasses, presentClasses, percentage });
     
     return {
       total: totalClasses,
