@@ -16,6 +16,12 @@ pipeline {
     }
 
     stages {
+        stage('Clean Workspace') {
+            steps {
+                deleteDir() // ensures no old refs like "master" remain
+            }
+        }
+
         stage('Clone Repository') {
             steps {
                 git branch: 'main',
@@ -71,3 +77,4 @@ pipeline {
         }
     }
 }
+
