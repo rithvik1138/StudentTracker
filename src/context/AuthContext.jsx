@@ -556,17 +556,22 @@ export const AuthProvider = ({ children }) => {
     
     // Handle legacy users
     if (user.isLegacyUser) {
+      // For legacy users, ensure we use the correct database ID
+      const legacyUserFromDb = users.find(u => u.name === user.name && u.isLegacyUser);
+      const userId = legacyUserFromDb ? legacyUserFromDb.id : user.id;
+      
       const currentUser = {
-        id: user.id,
+        id: userId,
         email: user.email,
         name: user.name,
         role: user.role,
-        user_id: user.id,
-        profile_id: user.id,
+        user_id: userId,
+        profile_id: userId,
         isLegacyUser: true,
         ...user
       };
       console.log('getCurrentUser (legacy):', currentUser);
+      console.log('Legacy user found in DB:', legacyUserFromDb);
       return currentUser;
     }
     
