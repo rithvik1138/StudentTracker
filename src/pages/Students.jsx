@@ -7,7 +7,7 @@ import { Plus, UserX, Edit } from 'lucide-react';
 import StudentDialog from '@/components/StudentDialog.jsx';
 
 const Students = () => {
-  const { user, users, removeStudent } = useAuth();
+  const { user, users, removeStudent, calculateCGPA } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState(null);
 
@@ -67,12 +67,20 @@ const Students = () => {
                   </div>
                   <div>
                     <h3 className="font-medium text-foreground">{student.name}</h3>
-                    <p className="text-sm text-muted-foreground">{student.email}</p>
-                    {student.cgpa !== undefined && (
-                      <Badge variant="secondary" className="mt-1">
-                        CGPA: {student.cgpa.toFixed(1)}/10
-                      </Badge>
+                    {student.email && (
+                      <p className="text-sm text-muted-foreground">{student.email}</p>
                     )}
+                    {(() => {
+                      const cgpa = student.cgpa || calculateCGPA(student.id || student.user_id);
+                      if (cgpa > 0) {
+                        return (
+                          <Badge variant="secondary" className="mt-1">
+                            CGPA: {cgpa.toFixed(1)}/10
+                          </Badge>
+                        );
+                      }
+                      return null;
+                    })()}
                   </div>
                 </div>
                 <div className="flex space-x-2">
