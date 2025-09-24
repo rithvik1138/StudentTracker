@@ -18,7 +18,8 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git url: 'https://github.com/rithvik1138/academic-compass-io.git', branch: 'main'
+                git branch: 'main',
+                    url: 'https://github.com/rithvik1138/academic-compass-io.git'
             }
         }
 
