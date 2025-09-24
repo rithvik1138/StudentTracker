@@ -4,7 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext.jsx";
-import LoginPage from "@/components/LoginPage.jsx";
+import Auth from "@/pages/Auth.jsx";
 import DashboardLayout from "@/components/DashboardLayout.jsx";
 import Dashboard from "@/pages/Dashboard.jsx";
 import Subjects from "@/pages/Subjects.jsx";
@@ -18,7 +18,7 @@ const queryClient = new QueryClient();
 
 const ProtectedRoute = ({ children }) => {
   const { user } = useAuth();
-  return user ? <>{children}</> : <Navigate to="/login" replace />;
+  return user ? <>{children}</> : <Navigate to="/auth" replace />;
 };
 
 const PublicRoute = ({ children }) => {
@@ -28,9 +28,9 @@ const PublicRoute = ({ children }) => {
 
 const AppRoutes = () => (
   <Routes>
-    <Route path="/login" element={
+    <Route path="/auth" element={
       <PublicRoute>
-        <LoginPage />
+        <Auth />
       </PublicRoute>
     } />
     <Route path="/dashboard" element={
