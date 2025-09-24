@@ -89,13 +89,20 @@ const Grades = () => {
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-muted-foreground">Current CGPA</span>
-                    <span className="text-2xl font-bold text-foreground">{(() => {
-                      const cgpa = calculateCGPA(user?.id || '');
-                      return typeof cgpa === 'number' ? cgpa.toFixed(2) : '0.00';
-                    })()}/10</span>
+            <span className="text-2xl font-bold text-foreground">{(() => {
+              const currentUser = user;
+              console.log('CGPA calculation for user:', currentUser?.name, 'ID:', currentUser?.id);
+              const cgpa = calculateCGPA(currentUser?.id || '');
+              console.log('CGPA result:', cgpa);
+              return typeof cgpa === 'number' ? cgpa.toFixed(2) : '0.00';
+            })()}/10</span>
                   </div>
                   <Progress 
-                    value={getCGPAProgress(calculateCGPA(user?.id || ''))} 
+                    value={(() => {
+                      const currentUser = user;
+                      const cgpa = calculateCGPA(currentUser?.id || '');
+                      return getCGPAProgress(cgpa);
+                    })()} 
                     className="h-2"
                   />
                   <p className="text-xs text-muted-foreground">
