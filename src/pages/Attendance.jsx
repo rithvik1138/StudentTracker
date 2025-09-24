@@ -214,10 +214,10 @@ const Attendance = () => {
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3">
-                {students.map((student) => {
-                  const stats = getStudentAttendance(student.id);
-                  return (
-                    <div key={student.id} className="p-4 border border-border rounded-lg">
+                 {students.map((student) => {
+                   const stats = getStudentAttendance(student.user_id || student.id);
+                   return (
+                     <div key={student.id} className="p-4 border border-border rounded-lg">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-medium text-foreground">{student.name}</h4>
                         <Badge variant="outline" className={
@@ -265,16 +265,16 @@ const Attendance = () => {
                             <User className="w-4 h-4 text-muted-foreground" />
                             <span className="text-sm font-medium text-foreground">{student.name}</span>
                           </div>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setAttendanceDialog({
-                              open: true,
-                              studentId: student.id,
-                              studentName: student.name,
-                              subject: subject.name
-                            })}
-                          >
+                           <Button 
+                             variant="outline" 
+                             size="sm"
+                             onClick={() => setAttendanceDialog({
+                               open: true,
+                               studentId: student.user_id || student.id,
+                               studentName: student.name,
+                               subject: subject.name
+                             })}
+                           >
                             Mark
                           </Button>
                         </div>

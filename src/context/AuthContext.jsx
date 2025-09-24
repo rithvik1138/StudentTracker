@@ -35,16 +35,44 @@ export const AuthProvider = ({ children }) => {
 
   const loadData = async () => {
     try {
-      // Load all data from Supabase
-      const [profilesRes, subjectsRes, gradesRes, attendanceRes, assignmentsRes] = await Promise.all([
+      // Load all data from Supabase and old app_users
+      const [profilesRes, appUsersRes, subjectsRes, gradesRes, attendanceRes, assignmentsRes] = await Promise.all([
         supabase.from('profiles').select('*'),
+        supabase.from('app_users').select('*'),
         supabase.from('subjects').select('*'),
         supabase.from('grades').select('*'),
         supabase.from('attendance').select('*'),
         supabase.from('assignments').select('*')
       ]);
 
-      if (profilesRes.data) setUsers(profilesRes.data);
+      // Combine profiles and app_users, converting app_users to profile format
+      let allUsers = [...(profilesRes.data || [])];
+      
+      if (appUsersRes.data) {
+        const appUsersAsProfiles = appUsersRes.data.map(user => ({
+          id: user.id,
+          user_id: user.id,
+          name: user.name,
+          role: user.role,
+          email: user.email,
+          cgpa: user.cgpa,
+          isLegacyUser: true,
+          created_at: user.created_at,
+          updated_at: user.updated_at
+        }));
+        
+        // Add legacy users that don't already exist in profiles
+        appUsersAsProfiles.forEach(legacyUser => {
+          const existsInProfiles = allUsers.find(u => 
+            u.name === legacyUser.name || u.user_id === legacyUser.id
+          );
+          if (!existsInProfiles) {
+            allUsers.push(legacyUser);
+          }
+        });
+      }
+
+      setUsers(allUsers);
       if (subjectsRes.data) setSubjects(subjectsRes.data);
       if (gradesRes.data) setGrades(gradesRes.data);
       if (attendanceRes.data) setAttendance(attendanceRes.data);
