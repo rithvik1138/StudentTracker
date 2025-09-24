@@ -9,18 +9,17 @@ const AttendanceDialog = ({ open, onOpenChange, studentId, studentName, subject 
   const { addAttendance } = useAuth();
   const [status, setStatus] = useState('present');
 
-  const handleSubmit = () => {
-    const newRecord = {
-      id: Date.now().toString(),
-      studentId,
-      subject,
-      date: new Date().toISOString().split('T')[0],
-      status
-    };
-
-    addAttendance(newRecord);
-    onOpenChange(false);
-    setStatus('present');
+  const handleSubmit = async () => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    const result = await addAttendance(studentId, subject, status, today);
+    
+    if (result.success) {
+      onOpenChange(false);
+      setStatus('present');
+    } else {
+      console.error('Failed to add attendance:', result.error);
+    }
   };
 
   const getStatusIcon = (statusValue) => {

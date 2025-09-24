@@ -8,11 +8,11 @@ import { toast } from 'sonner';
 
 const GradeDialog = ({ open, onOpenChange, studentId, subjectId, studentName, subjectName }) => {
   const { updateStudentGrade, grades } = useAuth();
-  const currentGrade = grades.find(g => g.studentId === studentId && g.subjectId === subjectId);
+  const currentGrade = grades.find(g => g.student_id === studentId && g.subject_id === subjectId);
   
   const [selectedGrade, setSelectedGrade] = useState(currentGrade?.grade?.toString() || '');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     if (!selectedGrade) {
@@ -26,9 +26,15 @@ const GradeDialog = ({ open, onOpenChange, studentId, subjectId, studentName, su
       return;
     }
 
-    updateStudentGrade(studentId, subjectId, grade, 10);
-    toast.success(`Grade updated for ${studentName} in ${subjectName}`);
-    onOpenChange(false);
+    const result = await updateStudentGrade(studentId, subjectId, grade);
+    
+    if (result.error) {
+      toast.error('Failed to update grade');
+      console.error('Grade update error:', result.error);
+    } else {
+      toast.success(`Grade updated for ${studentName} in ${subjectName}`);
+      onOpenChange(false);
+    }
   };
 
   return (
