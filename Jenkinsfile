@@ -18,7 +18,7 @@ pipeline {
     stages {
         stage('Clean Workspace') {
             steps {
-                deleteDir() // ensures no old refs like "master" remain
+                deleteDir() // clears old files
             }
         }
 
@@ -34,10 +34,10 @@ pipeline {
                 dir("${env.FRONTEND_DIR}") {
                     script {
                         def nodeHome = tool name: 'NODE_HOME', type: 'jenkins.plugins.nodejs.tools.NodeJSInstallation'
-                        env.PATH = "${nodeHome}/bin:${env.PATH}"
+                        env.PATH = "${nodeHome}\\bin;${env.PATH}"
                     }
-                    sh 'npm install'
-                    sh 'npm run build'
+                    bat 'npm install'
+                    bat 'npm run build'
                 }
             }
         }
@@ -45,10 +45,10 @@ pipeline {
         stage('Package Frontend as WAR') {
             steps {
                 dir("${env.FRONTEND_DIR}") {
-                    sh """
-                        mkdir -p frontend_war/WEB-INF/classes
-                        cp -r dist/* frontend_war/
-                        jar -cvf ${env.WORKSPACE}/${FRONTEND_WAR} -C frontend_war .
+                    bat """
+                        mkdir frontend_war\\WEB-INF\\classes
+                        xcopy /E /I dist frontend_war
+                        jar -cvf %WORKSPACE%\\%FRONTEND_WAR% -C frontend_war .
                     """
                 }
             }
@@ -56,13 +56,11 @@ pipeline {
 
         stage('Deploy Frontend to Tomcat (/frontapp1)') {
             steps {
-                script {
-                    sh """
-                        curl -u ${TOMCAT_USER}:${TOMCAT_PASS} \
-                          --upload-file ${env.WORKSPACE}/${FRONTEND_WAR} \
-                          "${TOMCAT_URL}/deploy?path=/frontapp1&update=true"
-                    """
-                }
+                bat """
+                    curl -u %TOMCAT_USER%:%TOMCAT_PASS% ^
+                      --upload-file %WORKSPACE%\\%FRONTEND_WAR% ^
+                      "%TOMCAT_URL%/deploy?path=/frontapp1&update=true"
+                """
             }
         }
     }
@@ -77,4 +75,5 @@ pipeline {
         }
     }
 }
+
 
